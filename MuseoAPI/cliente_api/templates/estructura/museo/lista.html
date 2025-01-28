@@ -1,0 +1,14 @@
+<div>
+    {% for museo in museos %}
+        <div>    
+            <p>ID: {{museo.id}}</p>
+            <p>Nombre: {{museo.nombre}}</p>
+            <p>Ubicación: {{museo.ubicacion}}</p>
+            <p>Fecha_fundacion: {{museo.fecha_fundacion}}</p>
+            <p>Descripción: {{museo.descripcion}}</p>
+            <p>Creados por: {{museo.creado_por}}</p>
+        </div>
+    {% empty %}
+        <h1>Lo sentimos pero no hay museos</h1>
+    {% endfor %}
+</div>

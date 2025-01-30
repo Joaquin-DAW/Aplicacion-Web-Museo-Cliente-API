@@ -30,5 +30,23 @@
               </li>
             </ul>
           </li>
+          <!-- Grupo para Exposiciones -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="obraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Exposiciones</a>
+            <ul class="dropdown-menu" aria-labelledby="obraDropdown">
+              <li>
+                <a class="dropdown-item" href="{% url 'listar_exposiciones' %}">Listado de Exposiciones</a>
+              </li>
+            </ul>
+          </li>
+          <!-- Grupo para Entradas -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="obraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Entradas</a>
+            <ul class="dropdown-menu" aria-labelledby="obraDropdown">
+              <li>
+                <a class="dropdown-item" href="{% url 'listar_entradas' %}">Listado de Entradas</a>
+              </li>
+            </ul>
+          </li>
   </div>
   </nav>

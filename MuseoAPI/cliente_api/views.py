@@ -23,3 +23,17 @@ def listar_obras(request):
     obras = response.json()
     
     return render(request, 'estructura/obra/lista.html', {'obras': obras})
+
+def listar_exposiciones(request):
+    headers = {'Authorization': 'Bearer Tptiypl35obv48FlzLegD6dscLrvBC'} 
+    response = requests.get('http://127.0.0.1:8000/api/v1/exposiciones', headers=headers)
+    exposiciones = response.json()
+    
+    return render(request, 'estructura/exposicion/lista.html', {'exposiciones': exposiciones})
+
+def listar_entradas(request):
+    headers = {'Authorization': 'Bearer Tptiypl35obv48FlzLegD6dscLrvBC'} 
+    response = requests.get('http://127.0.0.1:8000/api/v1/entradas', headers=headers)
+    entradas = response.json()
+    
+    return render(request, 'estructura/entrada/lista.html', {'entradas': entradas})

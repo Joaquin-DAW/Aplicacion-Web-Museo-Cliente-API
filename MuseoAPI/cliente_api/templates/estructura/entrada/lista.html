@@ -1,0 +1,27 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Entradas</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Lista de Entrada</h1>
+        <ul class="list-group">
+            {% for entrada in entradas %}
+                <li class="list-group-item">
+                    <h5>Código: {{ entrada.codigo }}</h6>
+                    <p>Precio: {{ entrada.precio }}</p>
+                    <p>Tipo: {{ entrada.tipo }}</p>
+                    <p>Fecha compra: {{ entrada.fecha_compra }}</p>
+                    <p>Visitante: {{ entrada.visitante }}</p>
+                </li>
+            {% empty %}
+                <li class="list-group-item text-center">
+                    <h1>Lo sentimos pero no hay entradas</h1>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

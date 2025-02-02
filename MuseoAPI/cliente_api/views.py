@@ -10,7 +10,7 @@ def index(request):
 
 def listar_museos(request):
     #Obtenemos todos los museos
-    headers = {'Authorization': 'Bearer Tptiypl35obv48FlzLegD6dscLrvBC'} 
+    headers = {'Authorization': 'Bearer =e1)ftye%m4d@xue*h8lk#sir3&fd9mm1!=jzdu%b3^yi9i+se'} 
     response = requests.get('http://127.0.0.1:8000/api/v1/museos', headers=headers)
     #Transformamos la respuesta en json
     museos = response.json()
@@ -30,6 +30,13 @@ def listar_exposiciones(request):
     exposiciones = response.json()
     
     return render(request, 'estructura/exposicion/lista.html', {'exposiciones': exposiciones})
+
+def listar_artistas(request):
+    headers = {'Authorization': 'Bearer Tptiypl35obv48FlzLegD6dscLrvBC'} 
+    response = requests.get('http://127.0.0.1:8000/api/v1/artistas', headers=headers)
+    artistas = response.json()
+    
+    return render(request, 'estructura/artista/lista.html', {'artistas': artistas})
 
 def listar_entradas(request):
     headers = {'Authorization': 'Bearer Tptiypl35obv48FlzLegD6dscLrvBC'} 

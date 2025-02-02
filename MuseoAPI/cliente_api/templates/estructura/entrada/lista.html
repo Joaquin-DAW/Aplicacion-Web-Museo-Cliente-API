@@ -1,10 +1,7 @@
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Lista de Entradas</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+{% extends 'principal.html' %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
     <div class="container mt-5">
         <h1 class="mb-4">Lista de Entrada</h1>
         <ul class="list-group">
@@ -23,5 +20,4 @@
             {% endfor %}
         </ul>
     </div>
-</body>
-</html>
+    {% endblock %}

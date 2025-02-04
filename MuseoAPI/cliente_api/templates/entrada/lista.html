@@ -1,0 +1,11 @@
+{% extends 'principal.html' %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
+<h1 class="mb-4">Lista de Entrada</h1>
+  {% for entrada in entradas %}
+    {% include 'entrada/_entrada.html' %}
+  {% empty %}
+    <h2>No hay entradas registradas aún.</h2>
+  {% endfor %}
+{% endblock %}

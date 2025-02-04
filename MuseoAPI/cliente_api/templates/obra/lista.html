@@ -1,0 +1,11 @@
+{% extends 'principal.html' %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
+<h1 class="mb-4">Lista de Obras</h1>
+  {% for obra in obras %}
+    {% include 'obra/_obra.html' %}
+  {% empty %}
+    <h2>No hay obras registradas aún.</h2>
+  {% endfor %}
+{% endblock %}

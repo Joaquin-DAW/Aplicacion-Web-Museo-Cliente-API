@@ -9,4 +9,6 @@ urlpatterns = [
     path('obras/', views.listar_obras, name='listar_obras'),
     path('exposiciones/', views.listar_exposiciones, name='listar_exposiciones'),
     path('entradas/', views.listar_entradas, name='listar_entradas'),
+    
+    path('museos/buscar_simple/', views.museo_buscar_simple, name='museo_buscar_simple'),
 ]

@@ -1,0 +1,11 @@
+{% extends 'principal.html' %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
+<h1 class="mb-4">Lista de Museos</h1>
+  {% for museo in museos %}
+    {% include 'museo/_museo.html' %}
+  {% empty %}
+    <h2>No hay información disponible del museo en estos momentos</h2>
+  {% endfor %}
+{% endblock %}

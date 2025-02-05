@@ -1,0 +1,14 @@
+{% extends 'principal.html' %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
+<div class="container mt-5">
+    <h1 class="mb-4">Buscar Museo</h1>
+    <form method="GET" action="{% url 'museo_buscar_simple' %}">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" name="textoBusqueda" placeholder="Buscar Museo" required>
+            <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

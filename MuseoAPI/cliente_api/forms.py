@@ -6,4 +6,4 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
 class BusquedaMuseoForm(forms.Form):
-    textoBusqueda = forms.CharField(required=True, label="Buscar Museo")
+    textoBusqueda = forms.CharField(required=True, label="Buscar Museo", max_length=150)

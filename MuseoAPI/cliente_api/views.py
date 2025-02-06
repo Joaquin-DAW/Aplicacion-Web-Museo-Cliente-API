@@ -60,27 +60,23 @@ def listar_entradas(request):
     return render(request, 'entrada/lista.html', {'entradas': entradas})
 
 def museo_buscar_simple(request):
-    # Si hay parámetros GET, instanciamos el formulario con ellos,
-    # de lo contrario, creamos un formulario vacío.
     if request.GET:
         formulario = BusquedaMuseoForm(request.GET)
         if formulario.is_valid():
+            texto = formulario.cleaned_data.get("textoBusqueda")
+
             headers = crear_cabecera()
             response = requests.get(
-                'http://127.0.0.1:8000/api/v1/museos/museo_buscar_simple',
+                'http://127.0.0.1:8000/api/v1/museos/busqueda_simple',
                 headers=headers,
-                params={'textoBusqueda': formulario.cleaned_data.get("textoBusqueda")}
+                params={'textoBusqueda': texto}
             )
-            try:
-                museos = response.json()
-            except ValueError:
-                museos = []
-            # Renderiza una plantilla para mostrar los resultados
+
+            museos = response.json()
+        
             return render(request, 'museo/lista_busqueda_simple.html', {"museos": museos})
         else:
-            # Si el formulario enviado no es válido, podemos mostrarlo junto con los errores.
             return render(request, 'museo/busqueda_simple.html', {"formulario": formulario})
-    else:
-        # Si no se han enviado parámetros, simplemente mostramos el formulario de búsqueda.
-        formulario = BusquedaMuseoForm()
-        return render(request, 'museo/busqueda_simple.html', {"formulario": formulario})
+    
+    formulario = BusquedaMuseoForm()
+    return render(request, 'museo/busqueda_simple.html', {"formulario": formulario})

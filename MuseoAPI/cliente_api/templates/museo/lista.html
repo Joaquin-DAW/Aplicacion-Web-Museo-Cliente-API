@@ -3,9 +3,13 @@
 
 {% block contenido %}
 <h1 class="mb-4">Lista de Museos</h1>
+<ul class="list-group">
   {% for museo in museos %}
     {% include 'museo/_museo.html' %}
   {% empty %}
+  <li class="list-group-item text-center">
     <h2>No hay información disponible del museo en estos momentos</h2>
+  </li>
   {% endfor %}
+</ul>
 {% endblock %}

@@ -74,9 +74,37 @@ def museo_buscar_simple(request):
 
             museos = response.json()
         
-            return render(request, 'museo/lista_busqueda_simple.html', {"museos": museos})
+            return render(request, 'museo/lista_busqueda.html', {"museos": museos})
         else:
             return render(request, 'museo/busqueda_simple.html', {"formulario": formulario})
     
     formulario = BusquedaMuseoForm()
     return render(request, 'museo/busqueda_simple.html', {"formulario": formulario})
+
+
+def museo_buscar_avanzada(request):
+    if request.GET:
+        formulario = BusquedaAvanzadaMuseoForm(request.GET)
+
+        if formulario.is_valid():
+            try:
+                headers = crear_cabecera()
+                response = requests.get(
+                    'http://127.0.0.1:8000/api/v1/museos/busqueda_avanzada/',
+                    headers=headers,
+                    params=formulario.cleaned_data
+                )
+
+                if response.status_code == 200:
+                    museos = response.json()
+                    return render(request, 'museo/lista_busqueda.html', {"museos": museos, "formulario": formulario})
+                
+                elif response.status_code == 400:
+                    errores = response.json()  # Captura los errores del servidor
+                    return render(request, 'museo/busqueda_avanzada.html', {"formulario": formulario, "errores": errores})
+
+            except Exception as err:
+                return render(request, 'museo/busqueda_avanzada.html', {"formulario": formulario, "error": str(err)})
+    
+    formulario = BusquedaAvanzadaMuseoForm()
+    return render(request, 'museo/busqueda_avanzada.html', {"formulario": formulario})

@@ -11,4 +11,5 @@ urlpatterns = [
     path('entradas/', views.listar_entradas, name='listar_entradas'),
     
     path('museos/buscar_simple/', views.museo_buscar_simple, name='museo_buscar_simple'),
+    path('museos/busqueda_avanzada/', views.museo_buscar_avanzada, name='museo_buscar_avanzada'),
 ]

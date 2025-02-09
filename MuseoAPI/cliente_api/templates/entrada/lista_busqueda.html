@@ -5,11 +5,11 @@
 <div class="container mt-5">
     <h1 class="mb-4">Resultados de la Búsqueda</h1>
     <ul class="list-group">
-        {% for exposicion in exposiciones %}
-            {% include 'exposicion/_exposicion.html' %}
+        {% for entrada in entradas %}
+            {% include 'entrada/_entrada.html' %}
         {% empty %}
             <li class="list-group-item text-center">
-                <h2>No se encontraron exposiciones con ese criterio de búsqueda</h2>
+                <h2>No se encontraron entradas con ese criterio de búsqueda</h2>
             </li>
         {% endfor %}
     </ul>

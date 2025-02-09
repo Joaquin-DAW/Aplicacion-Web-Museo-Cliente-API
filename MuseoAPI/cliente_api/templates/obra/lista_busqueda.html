@@ -1,0 +1,17 @@
+{% extends 'principal.html' %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
+<div class="container mt-5">
+    <h1 class="mb-4">Resultados de la Búsqueda</h1>
+    <ul class="list-group">
+        {% for obra in obras %}
+            {% include 'obra/_obra.html' %}
+        {% empty %}
+            <li class="list-group-item text-center">
+                <h2>No se encontraron obras con ese criterio de búsqueda</h2>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

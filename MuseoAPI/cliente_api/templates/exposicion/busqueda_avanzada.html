@@ -1,0 +1,64 @@
+{% extends "principal.html" %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
+<h1>Búsqueda Avanzada de Exposiciones</h1>
+<form action="{% url 'exposicion_buscar_avanzada' %}" method="GET">
+    {% csrf_token %}
+    
+    <div class="mb-4">
+        {% bootstrap_field formulario.titulo show_label=True %}
+        {% if errores.titulo %}
+            <div class="text-danger">{{ errores.titulo.0 }}</div>
+        {% endif %}
+    </div>
+    
+    <div class="mb-4">
+        {% bootstrap_field formulario.descripcion show_label=True %}
+        {% if errores.descripcion %}
+            <div class="text-danger">{{ errores.descripcion.0 }}</div>
+        {% endif %}
+    </div>
+    
+    <div class="mb-4">
+        {% bootstrap_field formulario.fecha_desde show_label=True %}
+        {% if errores.fecha_desde %}
+            <div class="text-danger">{{ errores.fecha_desde.0 }}</div>
+        {% endif %}
+    </div>
+    
+    <div class="mb-4">
+        {% bootstrap_field formulario.fecha_hasta show_label=True %}
+        {% if errores.fecha_hasta %}
+            <div class="text-danger">{{ errores.fecha_hasta.0 }}</div>
+        {% endif %}
+    </div>
+    
+    <div class="mb-4">
+        {% bootstrap_field formulario.museo show_label=True %}
+        {% if errores.museo %}
+            <div class="text-danger">{{ errores.museo.0 }}</div>
+        {% endif %}
+    </div>
+    
+    {% bootstrap_button "Buscar" button_type="submit" button_class="btn-primary" %}
+</form>
+
+{% if errores %}
+    <div class="alert alert-danger">
+        {% for campo, mensajes in errores.items %}
+            <strong>{{ campo|capfirst }}:</strong>
+            <ul>
+                {% for mensaje in mensajes %}
+                    <li>{{ mensaje }}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+
+{% endblock %}

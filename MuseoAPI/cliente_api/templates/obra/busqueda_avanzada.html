@@ -1,0 +1,71 @@
+{% extends "principal.html" %}
+{% load django_bootstrap5 %}
+
+{% block contenido %}
+<h1>Búsqueda Avanzada de Obras</h1>
+<form action="{% url 'obra_buscar_avanzada' %}" method="GET">
+    {% csrf_token %}
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.titulo show_label=True %}
+        {% if errores.titulo %}
+            <div class="text-danger">{{ errores.titulo.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.fecha_creacion_desde show_label=True %}
+        {% if errores.fecha_creacion_desde %}
+            <div class="text-danger">{{ errores.fecha_creacion_desde.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.fecha_creacion_hasta show_label=True %}
+        {% if errores.fecha_creacion_hasta %}
+            <div class="text-danger">{{ errores.fecha_creacion_hasta.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.tipo show_label=True %}
+        {% if errores.tipo %}
+            <div class="text-danger">{{ errores.tipo.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.exposicion show_label=True %}
+        {% if errores.exposicion %}
+            <div class="text-danger">{{ errores.exposicion.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.artista show_label=True %}
+        {% if errores.artista %}
+            <div class="text-danger">{{ errores.artista.0 }}</div>
+        {% endif %}
+    </div>
+
+    {% bootstrap_button "Buscar" button_type="submit" button_class="btn-primary" %}
+</form>
+
+{% if errores %}
+    <div class="alert alert-danger">
+        {% for campo, mensajes in errores.items %}
+            <strong>{{ campo|capfirst }}:</strong>
+            <ul>
+                {% for mensaje in mensajes %}
+                    <li>{{ mensaje }}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+
+{% endblock %}

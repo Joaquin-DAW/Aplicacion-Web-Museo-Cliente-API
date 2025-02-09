@@ -37,6 +37,19 @@
     {% bootstrap_button "Buscar" button_type="submit" button_class="btn-primary" %}
 </form>
 
+{% if errores %}
+    <div class="alert alert-danger">
+        {% for campo, mensajes in errores.items %}
+            <strong>{{ campo|capfirst }}:</strong>
+            <ul>
+                {% for mensaje in mensajes %}
+                    <li>{{ mensaje }}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+{% endif %}
+
 {% if error %}
     <div class="alert alert-danger mt-3">{{ error }}</div>
 {% endif %}

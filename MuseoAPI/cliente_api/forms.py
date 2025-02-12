@@ -1,6 +1,9 @@
 from django import forms
 from .models import *
 import requests
+from datetime import date
+import datetime
+from .helper import helper
 
 class BusquedaMuseoForm(forms.Form):
     textoBusqueda = forms.CharField(required=True, label="Buscar Museo", max_length=150)
@@ -26,6 +29,71 @@ class BusquedaAvanzadaMuseoForm(forms.Form):
         required=False,
         widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"})
     )
+    
+
+class MuseoForm(forms.Form):
+    nombre = forms.CharField(
+        label="Nombre del Museo",
+        required=True,
+        max_length=200,
+        help_text="Máximo 200 caracteres."
+    )
+
+    ubicacion = forms.CharField(
+        label="Ubicación",
+        required=False,
+        max_length=200,
+        help_text="Proporcione la dirección o ubicación del museo.",
+        widget=forms.TextInput(attrs={"placeholder": "Ejemplo: Calle 123, Ciudad, País"})
+    )
+
+    fecha_fundacion = forms.DateField(
+        label="Fecha de Fundación",
+        initial=datetime.date.today,
+        widget=forms.SelectDateWidget(years=range(1800, datetime.date.today().year + 1)),
+        help_text="Seleccione la fecha en la que se fundó el museo."
+    )
+
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Añade una breve descripción del museo."}),
+        help_text="Breve descripción del museo. Mínimo 10 caracteres."
+    )
+
+    imagen = forms.FileField(
+        label="Imagen del Museo",
+        required=False,
+        help_text="Opcional: puedes subir una imagen del museo."
+    )
+
+    def clean(self):
+        """ Validaciones personalizadas """
+        cleaned_data = super().clean()
+
+        nombre = cleaned_data.get("nombre")
+        ubicacion = cleaned_data.get("ubicacion", "")
+        fecha_fundacion = cleaned_data.get("fecha_fundacion")
+        descripcion = cleaned_data.get("descripcion", "")
+
+        # Validar que el nombre no supere 200 caracteres
+        if len(nombre) > 200:
+            self.add_error("nombre", "El nombre no puede superar los 200 caracteres.")
+
+        # Validar que la ubicación tenga al menos 10 caracteres si se proporciona
+        if ubicacion and len(ubicacion) < 10:
+            self.add_error("ubicacion", "La ubicación debe tener al menos 10 caracteres.")
+
+        # Validar que la fecha de fundación no sea mayor a hoy
+        if fecha_fundacion and fecha_fundacion > datetime.date.today():
+            self.add_error("fecha_fundacion", "La fecha de fundación no puede ser futura.")
+
+        # Validar que la descripción tenga al menos 10 caracteres si se proporciona
+        if descripcion and len(descripcion) < 10:
+            self.add_error("descripcion", "La descripción debe tener al menos 10 caracteres.")
+
+        return cleaned_data
+
     
 class BusquedaAvanzadaObraForm(forms.Form):
     titulo = forms.CharField(

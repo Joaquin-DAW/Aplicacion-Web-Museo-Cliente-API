@@ -1,7 +1,9 @@
 import requests
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .forms import *
 import xml.etree.ElementTree as ET #Importamos la librería para trabajar con XML
+from django.contrib import messages
+import json
 
 import requests
 import environ
@@ -231,6 +233,95 @@ def museo_buscar_avanzada(request):
     formulario = BusquedaAvanzadaMuseoForm()
     return render(request, 'museo/busqueda_avanzada.html', {"formulario": formulario})
 
+# POST
+def museo_create(request):
+    if request.method == "POST":
+        formulario = MuseoForm(request.POST)
+        if formulario.is_valid():
+            try:
+                datos = formulario.cleaned_data.copy()
+                datos["fecha_fundacion"] = datos["fecha_fundacion"].strftime("%Y-%m-%d")
+                
+                headers = crear_cabecera()  # Incluir la cabecera con el token de autenticación
+
+                response = requests.post(
+                    "http://127.0.0.1:8000/api/v1/museos/crear",
+                    headers=headers,  # Usamos la cabecera aquí
+                    data=json.dumps(datos)
+                )
+                
+                if response.status_code == 201:
+                    messages.success(request, "El museo se ha creado correctamente.")
+                    return redirect("listar_museos")
+                else:
+                    errores = response.json()
+                    for error in errores:
+                        formulario.add_error(error, errores[error])
+            except requests.exceptions.RequestException as e:
+                messages.error(request, "Error de conexión con la API.")
+            except Exception as err:
+                messages.error(request, f"Ocurrió un error: {err}")
+    else:
+        formulario = MuseoForm()
+    
+    return render(request, "museo/create.html", {"formulario": formulario})
+
+
+# PUT - Editar un museo
+def museo_editar(request, museo_id):
+    headers = crear_cabecera() 
+    
+    # Obtener el museo desde la API con autenticación
+    response = requests.get(f"http://127.0.0.1:8000/api/v1/museos/{museo_id}", headers=headers)
+    
+    if response.status_code == 401:
+        messages.error(request, "No tienes permisos para acceder a este museo. Inicia sesión nuevamente.")
+        return redirect("listar_museos")
+
+    if response.status_code != 200:
+        messages.error(request, f"Error al obtener el museo desde la API (Código {response.status_code}).")
+        return redirect("listar_museos")
+ 
+    museo = response.json() 
+
+    if request.method == "POST":
+        formulario = MuseoForm(request.POST)
+        if formulario.is_valid():
+            try:
+                datos = formulario.cleaned_data.copy()
+                datos["fecha_fundacion"] = datos["fecha_fundacion"].strftime("%Y-%m-%d")
+                
+                print("Cabecera enviada en PUT:", headers)  # Verificar token en PUT
+
+                response = requests.put(
+                    f"http://127.0.0.1:8000/api/v1/museos/{museo_id}/editar",
+                    headers=headers,
+                    data=json.dumps(datos)
+                )
+                
+                if response.status_code == 200:
+                    messages.success(request, "El museo se ha actualizado correctamente.")
+                    return redirect("listar_museos")
+                elif response.status_code == 401:
+                    messages.error(request, "No tienes permisos para actualizar este museo.")
+                    return redirect("listar_museos")
+                else:
+                    errores = response.json()
+                    for error in errores:
+                        formulario.add_error(error, errores[error])
+            except requests.exceptions.RequestException as e:
+                messages.error(request, "Error de conexión con la API.")
+            except Exception as err:
+                messages.error(request, f"Ocurrió un error: {err}")
+    else:
+        formulario = MuseoForm(initial={
+            'nombre': museo['nombre'],
+            'ubicacion': museo['ubicacion'],
+            'fecha_fundacion': museo['fecha_fundacion'],
+            'descripcion': museo['descripcion']
+        })
+    
+    return render(request, "museo/actualizar.html", {"formulario": formulario, "museo": museo})
 
 
 def obra_buscar_avanzada(request):

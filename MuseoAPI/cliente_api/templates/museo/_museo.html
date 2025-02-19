@@ -1,12 +1,19 @@
 <div class="container mt-5">
     <ul class="list-group">
-            <li class="list-group-item">
-                <h6 class="text-muted">ID: {{ museo.id }}</h5>
-                <h5>Nombre: {{ museo.nombre }}</h6>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="text-muted">ID: {{ museo.id }}</h6>
+                <h5>Nombre: {{ museo.nombre }}</h5>
                 <p>Ubicación: {{ museo.ubicacion }}</p>
                 <p>Fecha de Fundación: {{ museo.fecha_fundacion }}</p>
                 <p>Descripción: {{ museo.descripcion }}</p>
                 <p>Creado por: {{ museo.creado_por }}</p>
-            </li>
+            </div>
+            <div>
+                <a href="{% url 'museo_editar' museo.id %}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+            </div>
+        </li>
     </ul>
 </div>

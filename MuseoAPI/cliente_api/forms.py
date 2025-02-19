@@ -3,7 +3,6 @@ from .models import *
 import requests
 from datetime import date
 import datetime
-from .helper import helper
 
 class BusquedaMuseoForm(forms.Form):
     textoBusqueda = forms.CharField(required=True, label="Buscar Museo", max_length=150)
@@ -30,69 +29,76 @@ class BusquedaAvanzadaMuseoForm(forms.Form):
         widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"})
     )
     
-
+# Crear Museo (POST)
 class MuseoForm(forms.Form):
     nombre = forms.CharField(
         label="Nombre del Museo",
         required=True,
         max_length=200,
-        help_text="Máximo 200 caracteres."
+        help_text="Nombre del museo (máximo 200 caracteres)."
     )
-
     ubicacion = forms.CharField(
-        label="Ubicación",
-        required=False,
-        max_length=200,
-        help_text="Proporcione la dirección o ubicación del museo.",
-        widget=forms.TextInput(attrs={"placeholder": "Ejemplo: Calle 123, Ciudad, País"})
+        label="Ubicación del Museo",
+        required=True,
+        min_length=10,
+        help_text="Proporcione la dirección o ubicación del museo."
     )
-
     fecha_fundacion = forms.DateField(
         label="Fecha de Fundación",
-        initial=datetime.date.today,
-        widget=forms.SelectDateWidget(years=range(1800, datetime.date.today().year + 1)),
-        help_text="Seleccione la fecha en la que se fundó el museo."
+        required=True,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        help_text="Fecha en que se fundó el museo."
     )
-
     descripcion = forms.CharField(
         label="Descripción",
-        required=False,
+        required=True,
+        min_length=10,
         widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Añade una breve descripción del museo."}),
-        help_text="Breve descripción del museo. Mínimo 10 caracteres."
+        help_text="Breve descripción del museo."
     )
 
-    imagen = forms.FileField(
-        label="Imagen del Museo",
-        required=False,
-        help_text="Opcional: puedes subir una imagen del museo."
-    )
-
-    def clean(self):
-        """ Validaciones personalizadas """
-        cleaned_data = super().clean()
-
-        nombre = cleaned_data.get("nombre")
-        ubicacion = cleaned_data.get("ubicacion", "")
-        fecha_fundacion = cleaned_data.get("fecha_fundacion")
-        descripcion = cleaned_data.get("descripcion", "")
-
-        # Validar que el nombre no supere 200 caracteres
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get("nombre")
         if len(nombre) > 200:
-            self.add_error("nombre", "El nombre no puede superar los 200 caracteres.")
+            raise forms.ValidationError("El nombre no puede superar los 200 caracteres.")
+        return nombre
 
-        # Validar que la ubicación tenga al menos 10 caracteres si se proporciona
-        if ubicacion and len(ubicacion) < 10:
-            self.add_error("ubicacion", "La ubicación debe tener al menos 10 caracteres.")
+    def clean_ubicacion(self):
+        ubicacion = self.cleaned_data.get("ubicacion")
+        if len(ubicacion) < 10:
+            raise forms.ValidationError("La ubicación debe tener al menos 10 caracteres.")
+        return ubicacion
 
-        # Validar que la fecha de fundación no sea mayor a hoy
-        if fecha_fundacion and fecha_fundacion > datetime.date.today():
-            self.add_error("fecha_fundacion", "La fecha de fundación no puede ser futura.")
+    def clean_fecha_fundacion(self):
+        fecha_fundacion = self.cleaned_data.get("fecha_fundacion")
+        if fecha_fundacion > date.today():
+            raise forms.ValidationError("La fecha de fundación no puede ser en el futuro.")
+        return fecha_fundacion
 
-        # Validar que la descripción tenga al menos 10 caracteres si se proporciona
-        if descripcion and len(descripcion) < 10:
-            self.add_error("descripcion", "La descripción debe tener al menos 10 caracteres.")
+    def clean_descripcion(self):
+        descripcion = self.cleaned_data.get("descripcion")
+        if len(descripcion) < 10:
+            raise forms.ValidationError("La descripción debe tener al menos 10 caracteres.")
+        return descripcion
 
-        return cleaned_data
+    def enviar_datos(self):
+        """
+        Envía los datos a la API para crear un nuevo museo.
+        """
+        url = "http://127.0.0.1:8000/api/v1/museos/"  # Ajustar la URL según corresponda
+        datos = {
+            "nombre": self.cleaned_data["nombre"],
+            "ubicacion": self.cleaned_data["ubicacion"],
+            "fecha_fundacion": self.cleaned_data["fecha_fundacion"].strftime("%Y-%m-%d"),
+            "descripcion": self.cleaned_data["descripcion"],
+        }
+        
+        try:
+            respuesta = requests.post(url, json=datos)
+            return respuesta.json() if respuesta.status_code == 201 else respuesta.text
+        except requests.exceptions.RequestException as e:
+            return {"error": "No se pudo conectar con la API", "detalles": str(e)}
+
 
     
 class BusquedaAvanzadaObraForm(forms.Form):

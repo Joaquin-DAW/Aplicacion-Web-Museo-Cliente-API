@@ -9,7 +9,9 @@ urlpatterns = [
     path('museos/buscar_simple/', views.museo_buscar_simple, name='museo_buscar_simple'),
     path('museo/create/',views.museo_create, name='museo_create'),
     path('museo/editar/<int:museo_id>/', views.museo_editar, name='museo_editar'),
+    path('museo/editar/nombre/<int:museo_id>/', views.museo_editar_nombre, name='museo_editar_nombre'),
     path('museos/busqueda_avanzada/', views.museo_buscar_avanzada, name='museo_buscar_avanzada'),
+    path('museo/eliminar/<int:museo_id>/', views.museo_eliminar, name='museo_eliminar'),
     
     path('obras/', views.listar_obras, name='listar_obras'),
     path('obras/busqueda_avanzada/', views.obra_buscar_avanzada, name='obra_buscar_avanzada'),

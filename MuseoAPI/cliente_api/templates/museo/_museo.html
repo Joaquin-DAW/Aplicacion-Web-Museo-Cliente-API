@@ -1,19 +1,65 @@
-<div class="container mt-5">
-    <ul class="list-group">
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <h6 class="text-muted">ID: {{ museo.id }}</h6>
-                <h5>Nombre: {{ museo.nombre }}</h5>
-                <p>Ubicación: {{ museo.ubicacion }}</p>
-                <p>Fecha de Fundación: {{ museo.fecha_fundacion }}</p>
-                <p>Descripción: {{ museo.descripcion }}</p>
-                <p>Creado por: {{ museo.creado_por }}</p>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">
+            <a href="{% url 'listar_museos' %}">{{ museo.nombre|capfirst }}</a>
+        </h5>
+        <h6 class="card-subtitle mb-2 text-muted">Ubicación: {{ museo.ubicacion }}</h6>
+        <p class="card-text">Fecha de Fundación: {{ museo.fecha_fundacion|date:"d-m-Y" }}</p>
+        <p class="card-text">{{ museo.descripcion }}</p>
+        <div>
+            <p class="card-text">Exposiciones:</p>
+            <ul>
+                {% for exposicion in museo.exposiciones.all %}
+                    <li class="card-text">{{ exposicion.titulo }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% load bootstrap_icons %}
+        <div class="row btn-group">
+            <div class="mb-2">
+                <button type="button" 
+                        class="btn btn-outline-primary"> 
+                        <a href="{% url 'museo_editar' museo.id %}">
+                            <span>{% bs_icon 'pencil' %} </span>
+                        </a>
+                </button>
+
             </div>
             <div>
-                <a href="{% url 'museo_editar' museo.id %}" class="btn btn-warning">
-                    <i class="bi bi-pencil"></i> Editar
-                </a>
+                <button type="button" 
+                        class="btn btn-outline-primary"> 
+                        <a href="{% url 'museo_editar_nombre' museo.id %}">
+                            <span>{% bs_icon 'pencil' %} </span>Editar nombre
+                        </a>
+                </button>
             </div>
-        </li>
-    </ul>
+            <div class="mb-2">
+                            <button class="btn btn-danger" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#confirmDeleteModal-{{ museo.id }}">
+                                <span>{% bs_icon 'trash' %}</span>
+                            </button>
+            </div>
+        </div>
+        <div class="modal fade" id="confirmDeleteModal-{{ museo.id }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel-{{ museo.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar eliminación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        ¿Estás seguro de que deseas eliminar este museo: {{ museo.nombre }}? Esta acción no se puede deshacer.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form method="post" action="{% url 'museo_eliminar' museo.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

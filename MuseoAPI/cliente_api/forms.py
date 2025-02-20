@@ -99,7 +99,6 @@ class MuseoForm(forms.Form):
         except requests.exceptions.RequestException as e:
             return {"error": "No se pudo conectar con la API", "detalles": str(e)}
 
-
     
 class BusquedaAvanzadaObraForm(forms.Form):
     titulo = forms.CharField(
@@ -253,3 +252,14 @@ class BusquedaAvanzadaEntradaForm(forms.Form):
                 self.fields['visitante'].choices = [('', 'No hay visitantes disponibles')]
         except Exception:
             self.fields['visitante'].choices = [('', 'Error al cargar visitantes')]
+
+
+# Crear formulario PATCH para actualizar un museo
+
+class MuseoEditarNombreForm(forms.Form):
+    nombre = forms.CharField(
+        label="Nuevo Nombre del Museo",
+        required=True,
+        max_length=200,
+        help_text="Máximo 200 caracteres"
+    )

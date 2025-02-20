@@ -3,6 +3,9 @@ from django.shortcuts import render, redirect
 from .forms import *
 import xml.etree.ElementTree as ET #Importamos la librería para trabajar con XML
 from django.contrib import messages
+from datetime import datetime
+from .cliente_api import cliente_api
+from .helper import helper
 import json
 
 import requests
@@ -269,59 +272,117 @@ def museo_create(request):
 
 # PUT - Editar un museo
 def museo_editar(request, museo_id):
-    headers = crear_cabecera() 
-    
-    # Obtener el museo desde la API con autenticación
-    response = requests.get(f"http://127.0.0.1:8000/api/v1/museos/{museo_id}", headers=headers)
-    
-    if response.status_code == 401:
-        messages.error(request, "No tienes permisos para acceder a este museo. Inicia sesión nuevamente.")
-        return redirect("listar_museos")
+    datosFormulario = None
 
-    if response.status_code != 200:
-        messages.error(request, f"Error al obtener el museo desde la API (Código {response.status_code}).")
-        return redirect("listar_museos")
- 
-    museo = response.json() 
-
+    # Si el método es POST, obtenemos los datos del formulario
     if request.method == "POST":
-        formulario = MuseoForm(request.POST)
-        if formulario.is_valid():
-            try:
-                datos = formulario.cleaned_data.copy()
-                datos["fecha_fundacion"] = datos["fecha_fundacion"].strftime("%Y-%m-%d")
-                
-                print("Cabecera enviada en PUT:", headers)  # Verificar token en PUT
+        datosFormulario = request.POST
+    
+    # Obtener los datos del museo desde el helper
+    museo = helper.obtener_museo(museo_id)
 
-                response = requests.put(
-                    f"http://127.0.0.1:8000/api/v1/museos/{museo_id}/editar",
-                    headers=headers,
-                    data=json.dumps(datos)
-                )
-                
-                if response.status_code == 200:
-                    messages.success(request, "El museo se ha actualizado correctamente.")
-                    return redirect("listar_museos")
-                elif response.status_code == 401:
-                    messages.error(request, "No tienes permisos para actualizar este museo.")
-                    return redirect("listar_museos")
-                else:
-                    errores = response.json()
-                    for error in errores:
-                        formulario.add_error(error, errores[error])
-            except requests.exceptions.RequestException as e:
-                messages.error(request, "Error de conexión con la API.")
-            except Exception as err:
-                messages.error(request, f"Ocurrió un error: {err}")
-    else:
-        formulario = MuseoForm(initial={
+    # Crear el formulario con los datos iniciales del museo
+    formulario = MuseoForm(
+        datosFormulario,
+        initial={
             'nombre': museo['nombre'],
             'ubicacion': museo['ubicacion'],
-            'fecha_fundacion': museo['fecha_fundacion'],
+            'fecha_fundacion': datetime.strptime(museo['fecha_fundacion'], '%Y-%m-%d').date(),
             'descripcion': museo['descripcion']
-        })
-    
+        }
+    )
+
+    # Si el formulario es enviado con método POST y es válido
+    if request.method == "POST" and formulario.is_valid():
+        datos = formulario.cleaned_data.copy()
+        datos["fecha_fundacion"] = datos["fecha_fundacion"].strftime('%Y-%m-%d')
+
+        url_correcta = f"api/v1/museos/editar/{museo_id}"  # 🔹 URL bien formada
+        print("🔗 Endpoint generado:", url_correcta)  # 🔹 Verificar en la consola la URL generada
+
+        cliente = cliente_api(env("TOKEN_ACCESO"), "PUT", url_correcta, datos)
+        cliente.realizar_peticion_api()
+
+        if cliente.es_respuesta_correcta():
+            messages.success(request, "El museo ha sido actualizado correctamente.")
+            return redirect("listar_museos")
+        elif cliente.es_error_validacion_datos():
+            cliente.incluir_errores_formulario(formulario)
+        else:
+            # return tratar_errores(request, cliente.codigoRespuesta)
+            print("❌ ERROR: Ocurrió un problema en la actualización del museo.")  
+            print("⚠️ Código HTTP:", cliente.codigoRespuesta)
+            print("⚠️ Detalles del error:", cliente.datosRespuesta)  # 🔹 Ver exactamente qué error está devolviendo la API
+            print("📡 Enviando petición PUT a:", f'{API_BASE_URL}museos/editar/{museo_id}')
+
+            messages.error(request, "Error al actualizar el museo. Revisa la consola para más detalles.") 
+            return redirect("listar_museos")  # 🔹 En lugar de llamar `tratar_errores()`, te redirige con un mensaje de error
+
+
     return render(request, "museo/actualizar.html", {"formulario": formulario, "museo": museo})
+
+
+def museo_editar_nombre(request, museo_id):
+    datosFormulario = None
+    museo = helper.obtener_museo(museo_id)  # Obtenemos el museo
+
+    formulario = MuseoEditarNombreForm(datosFormulario,
+            initial={'nombre': museo['nombre']}
+    )
+
+    if request.method == "POST":
+        try:
+            formulario = MuseoEditarNombreForm(request.POST)
+            headers = crear_cabecera()
+            datos = request.POST.copy()
+
+            response = requests.patch(
+                f"{API_BASE_URL}museos/editar/nombre/{museo_id}",  # 📌 Endpoint correcto
+                headers=headers,
+                data=json.dumps(datos)
+            )
+
+            if response.status_code == 200:
+                messages.success(request, "Nombre del museo actualizado correctamente.")
+                return redirect("listar_museos")
+            else:
+                print(response.status_code)
+                response.raise_for_status()
+
+        except requests.exceptions.HTTPError as http_err:
+            print(f'Hubo un error en la petición: {http_err}')
+            if response.status_code == 400:
+                errores = response.json()
+                for error in errores:
+                    formulario.add_error(error, errores[error])
+                return render(request, 'museo/actualizar_nombre.html', {"formulario": formulario, "museo": museo})
+            else:
+                #return mi_error_500(request)
+                print("❌ ERROR: Ocurrió un problema en la actualización del museo.")  
+                print("📡 Enviando petición PUT a:", f'{API_BASE_URL}museos/editar/{museo_id}')
+
+            messages.error(request, "Error al actualizar el museo. Revisa la consola para más detalles.") 
+            return redirect("listar_museos")  # 🔹 En lugar de llamar `tratar_errores()`, te redirige con un mensaje de error
+
+
+
+    return render(request, 'museo/actualizar_nombre.html', {"formulario": formulario, "museo": museo})
+
+def museo_eliminar(request, museo_id):
+    try:
+        headers = crear_cabecera()
+        response = requests.delete(
+            f'http://127.0.0.1:8000/api/v1/museos/eliminar/{museo_id}',
+            headers=headers,
+        )
+        if response.status_code == requests.codes.ok:
+            messages.success(request, "Museo eliminado correctamente.")
+        else:
+            messages.error(request, "No se pudo eliminar el museo.")
+    except Exception as err:
+        messages.error(request, f"Ocurrió un error: {err}")
+
+    return redirect("listar_museos")  # Redirigir siempre a la lista de museos
 
 
 def obra_buscar_avanzada(request):
@@ -505,3 +566,17 @@ def entrada_buscar_avanzada(request):
     else:
         formulario = BusquedaAvanzadaEntradaForm()
         return render(request, 'entrada/busqueda_avanzada.html', {"formulario": formulario})
+    
+def tratar_errores(request,codigo):
+    if codigo == 404:
+        return mi_error_404(request)
+    else:
+        return mi_error_500(request)
+    
+#Páginas de Error
+def mi_error_404(request,exception=None):
+    return render(request, 'errores/404.html',None,None,404)
+
+#Páginas de Error
+def mi_error_500(request,exception=None):
+    return render(request, 'errores/500.html',None,None,500)

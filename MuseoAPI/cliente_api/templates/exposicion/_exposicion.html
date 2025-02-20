@@ -1,3 +1,4 @@
+{% load bootstrap_icons %}
 <div class="container mt-5">
     <ul class="list-group">
             <li class="list-group-item">
@@ -8,5 +9,14 @@
                 <p>Descripción: {{ exposicion.descripcion }}</p>
                 <p>Museo en el que esta: {{ exposicion.museo }}</p>
             </li>
+            <div class="mb-2">
+                <button type="button" 
+                        class="btn btn-outline-primary"> 
+                        <a href="{% url 'exposiciones_editar' exposicion.id %}">
+                            <span>{% bs_icon 'pencil' %} </span>
+                        </a>
+                </button>
+
+            </div>
     </ul>
 </div>

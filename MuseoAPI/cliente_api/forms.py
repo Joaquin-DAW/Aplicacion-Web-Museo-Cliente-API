@@ -3,6 +3,10 @@ from .models import *
 import requests
 from datetime import date
 import datetime
+import environ
+
+env = environ.Env()
+environ.Env.read_env()
 
 class BusquedaMuseoForm(forms.Form):
     textoBusqueda = forms.CharField(required=True, label="Buscar Museo", max_length=150)
@@ -162,6 +166,93 @@ class BusquedaAvanzadaObraForm(forms.Form):
         except Exception as e:
             self.fields['artista'].choices = [('', 'Error al cargar artistas')]
             
+# POST Exposicion
+class ExposicionForm(forms.Form):
+    titulo = forms.CharField(
+        label="Título de la Exposición",
+        required=True,
+        max_length=150,
+        help_text="Máximo 150 caracteres."
+    )
+    fecha_inicio = forms.DateField(
+        label="Fecha de Inicio",
+        required=True,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        help_text="Fecha en que comienza la exposición."
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de Fin",
+        required=False,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        help_text="Fecha en que termina la exposición (opcional)."
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Añade una breve descripción."}),
+        help_text="Breve descripción de la exposición.",
+        initial=""
+    )
+    capacidad = forms.IntegerField(
+        label="Capacidad",
+        required=True,
+        min_value=1,
+        help_text="Capacidad máxima de la exposición."
+    )
+    museo = forms.ChoiceField(
+        label="Museo",
+        required=True,
+        choices=[],
+        help_text="Seleccione el museo al que pertenece esta exposición."
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(ExposicionForm, self).__init__(*args, **kwargs)
+        self.fields['museo'].choices = self.obtener_museos()
+
+    def obtener_museos(self):
+        """
+        Obtiene la lista de museos disponibles desde la API.
+        """
+
+        headers = {
+        "Authorization": f"Bearer {env('TOKEN_ACCESO')}",  # 🔹 Pasar el token
+        "Content-Type": "application/json",
+    }
+
+        try:
+            response = requests.get("http://127.0.0.1:8000/api/v1/museos", headers=headers)
+
+            if response.status_code == 200:
+                museos = response.json()
+                return [(museo["id"], museo["nombre"]) for museo in museos]
+            elif response.status_code == 401:
+                print("⚠️ Error 401: Token de autenticación no válido o no proporcionado.")
+        except requests.exceptions.RequestException as e:
+            print("⚠️ Error obteniendo museos:", e)
+            
+            return []
+
+    def clean_fecha_fin(self):
+        """
+        Valida que la fecha de fin sea mayor o igual a la fecha de inicio.
+        """
+        fecha_inicio = self.cleaned_data.get("fecha_inicio")
+        fecha_fin = self.cleaned_data.get("fecha_fin")
+
+        if fecha_fin and fecha_inicio and fecha_fin < fecha_inicio:
+            raise forms.ValidationError("La fecha de fin debe ser posterior o igual a la fecha de inicio.")
+        return fecha_fin
+
+    def clean_titulo(self):
+        """
+        Valida que el título no tenga más de 150 caracteres.
+        """
+        titulo = self.cleaned_data.get("titulo")
+        if len(titulo) > 150:
+            raise forms.ValidationError("El título no puede superar los 150 caracteres.")
+        return titulo
+
 
 class BusquedaAvanzadaExposicionForm(forms.Form):
     titulo = forms.CharField(

@@ -1,0 +1,56 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+
+{% load django_bootstrap5 %}
+
+<form action="{% url 'exposicion_create' %}" method="post">
+    {% csrf_token %}
+
+    <div class="mb-4">
+        <label for="{{ formulario.titulo.id_for_label }}" class="form-label">{{ formulario.titulo.label }}: </label>
+        <input name="{{ formulario.titulo.html_name }}" type="text" class="form-control"
+               id="{{ formulario.titulo.id_for_label }}" value="{{ formulario.titulo.value|default:'' }}">
+        <div class="form-text">{{ formulario.titulo.help_text }}</div>
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.fecha_inicio.id_for_label }}" class="form-label">{{ formulario.fecha_inicio.label }}: </label>
+        <input name="{{ formulario.fecha_inicio.html_name }}" type="date" class="form-control"
+               id="{{ formulario.fecha_inicio.id_for_label }}" value="{{ formulario.fecha_inicio.value|date:'Y-m-d' }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.fecha_fin.id_for_label }}" class="form-label">{{ formulario.fecha_fin.label }}: </label>
+        <input name="{{ formulario.fecha_fin.html_name }}" type="date" class="form-control"
+               id="{{ formulario.fecha_fin.id_for_label }}" value="{{ formulario.fecha_fin.value|date:'Y-m-d' }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.descripcion.id_for_label }}" class="form-label">{{ formulario.descripcion.label }}: </label>
+        <textarea name="{{ formulario.descripcion.html_name }}" class="form-control"
+                  id="{{ formulario.descripcion.id_for_label }}">{{ formulario.descripcion.value }}</textarea>
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.capacidad.id_for_label }}" class="form-label">{{ formulario.capacidad.label }}: </label>
+        <input name="{{ formulario.capacidad.html_name }}" type="number" class="form-control"
+               id="{{ formulario.capacidad.id_for_label }}" value="{{ formulario.capacidad.value }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.museo.id_for_label }}" class="form-label">{{ formulario.museo.label }}: </label>
+        <select name="{{ formulario.museo.html_name }}" class="form-control">
+            {% for museo_id, museo_nombre in formulario.museo.field.choices %}
+                <option value="{{ museo_id }}">{{ museo_nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-4">
+        <button type="submit" class="btn btn-primary">Enviar</button>
+    </div>
+
+</form>
+
+{% endblock %}

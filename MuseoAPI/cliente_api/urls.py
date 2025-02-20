@@ -18,6 +18,8 @@ urlpatterns = [
     
     path('exposiciones/', views.listar_exposiciones, name='listar_exposiciones'),
     path('expocisiones/busqueda_avanzada/', views.exposicion_buscar_avanzada, name='exposicion_buscar_avanzada'),
+    path('exposicion/crear/', views.exposicion_create, name='exposicion_create'),
+    path('exposiciones/editar/<int:exposicion_id>/', views.exposiciones_editar, name='exposiciones_editar'),
     
     path('entradas/', views.listar_entradas, name='listar_entradas'),
     path('entradas/busqueda_avanzada/', views.entrada_buscar_avanzada, name='entrada_buscar_avanzada'),

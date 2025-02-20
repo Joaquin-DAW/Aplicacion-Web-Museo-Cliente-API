@@ -449,6 +449,105 @@ def obra_buscar_avanzada(request):
         formulario = BusquedaAvanzadaObraForm()
         return render(request, 'obra/busqueda_avanzada.html', {"formulario": formulario})
     
+# POST
+def exposicion_create(request):
+    """
+    Crea una nueva exposición enviando los datos a la API sin control de errores.
+    """
+    if request.method == "POST":
+        formulario = ExposicionForm(request.POST)
+        if formulario.is_valid():
+            
+            # Copiar datos del formulario
+            datos = formulario.cleaned_data.copy()
+
+            # Convertir fechas a string en formato "YYYY-MM-DD"
+            datos["fecha_inicio"] = datos["fecha_inicio"].strftime("%Y-%m-%d")
+            if datos["fecha_fin"]:
+                datos["fecha_fin"] = datos["fecha_fin"].strftime("%Y-%m-%d")
+
+            # ✅ Asegurar que el ID del museo sea un número entero
+            datos["museo"] = int(formulario.cleaned_data["museo"])
+
+            headers = crear_cabecera()
+
+            print("📡 Datos que se enviarán a la API:", datos)  # 🔍 Debug
+
+            # ✅ Enviar los datos correctamente en JSON
+            response = requests.post(
+                "http://127.0.0.1:8000/api/v1/exposiciones/crear",
+                headers=headers,
+                json=datos
+            )
+
+            print("📡 Respuesta del servidor:", response.status_code)  # 🔍 Debug
+
+            if response.status_code == 201:
+                messages.success(request, "La exposición se ha creado correctamente.")
+                return redirect("listar_exposiciones")
+
+    else:
+        formulario = ExposicionForm()  
+
+    return render(request, "exposicion/create.html", {"formulario": formulario})
+
+
+# PUT - Editar una exposición
+def exposiciones_editar(request, exposicion_id):
+    datosFormulario = None
+
+    if request.method == "POST":
+        datosFormulario = request.POST
+
+    # Obtener la exposición desde la API
+    exposicion = helper.obtener_exposicion(exposicion_id)
+
+    if exposicion is None:  # 🚨 Evita el error si `exposicion` no existe
+        messages.error(request, "No se pudo obtener la exposición. Verifica que exista y que la API esté funcionando correctamente.")
+        return redirect("listar_exposiciones")  # 🔹 Redirige para evitar el error
+
+    # Crear el formulario con los datos iniciales de la exposición
+    formulario = ExposicionForm(
+        datosFormulario,
+        initial={
+            'titulo': exposicion.get('titulo', ''),  # ✅ Usa `.get()` para evitar errores si falta el campo
+            'fecha_inicio': datetime.strptime(exposicion['fecha_inicio'], '%Y-%m-%d').date(),
+            'fecha_fin': datetime.strptime(exposicion['fecha_fin'], '%Y-%m-%d').date() if exposicion.get('fecha_fin') else None,
+            'descripcion': exposicion.get('descripcion', ''),
+            'capacidad': exposicion.get('capacidad', 0),
+            'museo': exposicion.get('museo', '')  # 🔹 Asegura que se pase correctamente
+        }
+    )
+
+    # Si el formulario es enviado con método POST y es válido
+    if request.method == "POST" and formulario.is_valid():
+        datos = formulario.cleaned_data.copy()
+        datos["fecha_inicio"] = datos["fecha_inicio"].strftime('%Y-%m-%d')
+        if datos["fecha_fin"]:
+            datos["fecha_fin"] = datos["fecha_fin"].strftime('%Y-%m-%d')
+
+        datos["museo"] = int(datos["museo"])  # ✅ Convertimos el ID del museo a entero
+
+        url_correcta = f"api/v1/exposiciones/editar/{exposicion_id}"
+        print("🔗 Endpoint generado:", url_correcta)  # 🔹 Debug
+
+        cliente = cliente_api(env("TOKEN_ACCESO"), "PUT", url_correcta, datos)
+        cliente.realizar_peticion_api()
+
+        if cliente.es_respuesta_correcta():
+            messages.success(request, "La exposición ha sido actualizada correctamente.")
+            return redirect("listar_exposiciones")
+        elif cliente.es_error_validacion_datos():
+            cliente.incluir_errores_formulario(formulario)
+        else:
+            print("❌ ERROR: Ocurrió un problema en la actualización de la exposición.")  
+            print("📡 Enviando petición PUT a:", f'{API_BASE_URL}exposiciones/editar/{exposicion_id}')
+
+            messages.error(request, "Error al actualizar la exposición. Revisa la consola para más detalles.") 
+            return redirect("listar_exposiciones")  
+
+    return render(request, "exposicion/actualizar.html", {"formulario": formulario, "exposicion": exposicion})
+
     
 def exposicion_buscar_avanzada(request):
     if request.GET:

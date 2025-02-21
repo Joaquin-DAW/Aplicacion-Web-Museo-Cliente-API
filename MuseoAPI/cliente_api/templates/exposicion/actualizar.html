@@ -2,7 +2,7 @@
 {% block contenido %}
 {% load django_bootstrap5 %}
 
-<form action="{% url 'exposicion_editar' exposicion.id %}" method="post">
+<form action="{% url 'exposiciones_editar' exposicion.id %}" method="post">
     {% csrf_token %}
     {{ formulario.as_p }}
 

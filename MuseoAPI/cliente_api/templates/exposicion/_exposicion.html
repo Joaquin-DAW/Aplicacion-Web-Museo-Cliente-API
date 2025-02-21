@@ -8,15 +8,47 @@
                 <p>Capacidad: {{ exposicion.capacidad }}</p>
                 <p>Descripción: {{ exposicion.descripcion }}</p>
                 <p>Museo en el que esta: {{ exposicion.museo }}</p>
-            </li>
-            <div class="mb-2">
-                <button type="button" 
-                        class="btn btn-outline-primary"> 
-                        <a href="{% url 'exposiciones_editar' exposicion.id %}">
-                            <span>{% bs_icon 'pencil' %} </span>
-                        </a>
-                </button>
-
+                <div class="mb-2">
+                    <button type="button" 
+                            class="btn btn-outline-primary"> 
+                            <a href="{% url 'exposiciones_editar' exposicion.id %}">
+                                <span>{% bs_icon 'pencil' %} </span>
+                            </a>
+                    </button>
+                </div>
+                <div class="mb-2">
+                    <button type="button" 
+                            class="btn btn-outline-primary"> 
+                            <a href="{% url 'exposicion_editar_capacidad' exposicion.id %}">
+                                <span>{% bs_icon 'pencil' %} Editar capacidad</span>
+                            </a>
+                    </button>
+                </div>
+                <div class="mb-2">
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal-{{ exposicion.id }}">
+                        <span>{% bs_icon 'trash' %} </span>
+                    </button>
+                </div>
             </div>
+            <div class="modal fade" id="confirmDeleteModal-{{ exposicion.id }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel-{{ exposicion.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmDeleteModalLabel-{{ exposicion.id }}">Confirmar eliminación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            ¿Estás seguro de que deseas eliminar la exposición "{{ exposicion.titulo }}"? Esta acción no se puede deshacer.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <form method="post" action="{% url 'exposicion_eliminar' exposicion.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </li>
     </ul>
 </div>

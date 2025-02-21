@@ -1,0 +1,61 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+
+{% load django_bootstrap5 %}
+
+<form action="{% url 'visita_guiada_create' %}" method="post">
+    {% csrf_token %}
+
+    <div class="mb-4">
+        <label for="{{ formulario.nombre_visita_guia.id_for_label }}" class="form-label">{{ formulario.nombre_visita_guia.label }}: </label>
+        <input name="{{ formulario.nombre_visita_guia.html_name }}" type="text" class="form-control"
+               id="{{ formulario.nombre_visita_guia.id_for_label }}" value="{{ formulario.nombre_visita_guia.value|default:'' }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.duracion.id_for_label }}" class="form-label">{{ formulario.duracion.label }}: </label>
+        <input name="{{ formulario.duracion.html_name }}" type="time" class="form-control"
+               id="{{ formulario.duracion.id_for_label }}" value="{{ formulario.duracion.value|default:'00:00' }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.capacidad_maxima.id_for_label }}" class="form-label">{{ formulario.capacidad_maxima.label }}: </label>
+        <input name="{{ formulario.capacidad_maxima.html_name }}" type="number" class="form-control"
+               id="{{ formulario.capacidad_maxima.id_for_label }}" value="{{ formulario.capacidad_maxima.value }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.idioma.id_for_label }}" class="form-label">{{ formulario.idioma.label }}: </label>
+        <select name="{{ formulario.idioma.html_name }}" class="form-control">
+            {% for idioma_value, idioma_label in formulario.idioma.field.choices %}
+                <option value="{{ idioma_value }}">{{ idioma_label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.guias.id_for_label }}" class="form-label">{{ formulario.guias.label }}: </label>
+        <select name="{{ formulario.guias.html_name }}" class="form-control" multiple>
+            {% for guia_id, guia_nombre in formulario.guias.field.choices %}
+                <option value="{{ guia_id }}">{{ guia_nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="mb-4">
+        <label for="{{ formulario.visitantes.id_for_label }}" class="form-label">{{ formulario.visitantes.label }}: </label>
+        <select name="{{ formulario.visitantes.html_name }}" class="form-control" multiple>
+            {% for visitante_id, visitante_nombre in formulario.visitantes.field.choices %}
+                <option value="{{ visitante_id }}">{{ visitante_nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-4">
+        <button type="submit" class="btn btn-primary">Enviar</button>
+    </div>
+
+</form>
+
+{% endblock %}

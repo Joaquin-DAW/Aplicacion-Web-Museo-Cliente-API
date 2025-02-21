@@ -20,7 +20,12 @@ urlpatterns = [
     path('expocisiones/busqueda_avanzada/', views.exposicion_buscar_avanzada, name='exposicion_buscar_avanzada'),
     path('exposicion/crear/', views.exposicion_create, name='exposicion_create'),
     path('exposiciones/editar/<int:exposicion_id>/', views.exposiciones_editar, name='exposiciones_editar'),
+    path('exposicion/editar/capacidad/<int:exposicion_id>/', views.exposicion_editar_capacidad, name='exposicion_editar_capacidad'),
+    path('exposicion/eliminar/<int:exposicion_id>/', views.exposicion_eliminar, name='exposicion_eliminar'),
     
     path('entradas/', views.listar_entradas, name='listar_entradas'),
     path('entradas/busqueda_avanzada/', views.entrada_buscar_avanzada, name='entrada_buscar_avanzada'),
+    
+    path('visitasguiadas/', views.listar_visitas_guiadas, name='listar_visitas_guiadas'),
+    path('visitasguiadas/crear/', views.visita_guiada_create, name='visita_guiada_create'),
 ]

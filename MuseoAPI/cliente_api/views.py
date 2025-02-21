@@ -133,6 +133,20 @@ def listar_entradas(request):
     
     return render(request, 'entrada/lista.html', {'entradas': entradas})
 
+def listar_visitas_guiadas(request):
+    # Obtener todas las visitas guiadas desde la API
+    headers = crear_cabecera()
+    response = requests.get(f'{API_BASE_URL}visitasguiadas', headers=headers)
+
+    # Transformamos la respuesta en JSON
+    visitas = tipo_respuesta(response)
+
+    if "error" in visitas:
+        return render(request, 'visita_guiada/lista.html', {"error": visitas["error"]})
+
+    return render(request, 'visita_guiada/lista.html', {"visitas": visitas})
+
+
 def museo_buscar_simple(request):
     if request.GET:
         formulario = BusquedaMuseoForm(request.GET)
@@ -364,8 +378,6 @@ def museo_editar_nombre(request, museo_id):
             messages.error(request, "Error al actualizar el museo. Revisa la consola para más detalles.") 
             return redirect("listar_museos")  # 🔹 En lugar de llamar `tratar_errores()`, te redirige con un mensaje de error
 
-
-
     return render(request, 'museo/actualizar_nombre.html', {"formulario": formulario, "museo": museo})
 
 def museo_eliminar(request, museo_id):
@@ -548,6 +560,50 @@ def exposiciones_editar(request, exposicion_id):
 
     return render(request, "exposicion/actualizar.html", {"formulario": formulario, "exposicion": exposicion})
 
+#PATCH
+def exposicion_editar_capacidad(request, exposicion_id):
+    datosFormulario = None
+    exposicion = helper.obtener_exposicion(exposicion_id)  # Obtenemos la exposición
+
+    formulario = ExposicionEditarCapacidadForm(
+        datosFormulario,
+        initial={'capacidad': exposicion['capacidad']}
+    )
+
+    if request.method == "POST":
+        try:
+            formulario = ExposicionEditarCapacidadForm(request.POST)
+            headers = crear_cabecera()
+            datos = request.POST.copy()
+
+            response = requests.patch(
+                f"{API_BASE_URL}exposiciones/editar/capacidad/{exposicion_id}/",  # 📌 Endpoint correcto
+                headers=headers,
+                data=json.dumps(datos)
+            )
+
+            if response.status_code == 200:
+                messages.success(request, "Capacidad de la exposición actualizada correctamente.")
+                return redirect("listar_exposiciones")
+            else:
+                print(response.status_code)
+                response.raise_for_status()
+
+        except requests.exceptions.HTTPError as http_err:
+            print(f'Hubo un error en la petición: {http_err}')
+            if response.status_code == 400:
+                errores = response.json()
+                for error in errores:
+                    formulario.add_error(error, errores[error])
+                return render(request, 'exposicion/actualizar_capacidad.html', {"formulario": formulario, "exposicion": exposicion})
+            else:
+                print("❌ ERROR: Ocurrió un problema en la actualización de la exposición.")  
+                print("📡 Enviando petición PATCH a:", f'{API_BASE_URL}exposiciones/editar/capacidad/{exposicion_id}')
+
+            messages.error(request, "Error al actualizar la exposición. Revisa la consola para más detalles.") 
+            return redirect("listar_exposiciones")
+
+    return render(request, 'exposicion/actualizar_capacidad.html', {"formulario": formulario, "exposicion": exposicion})
     
 def exposicion_buscar_avanzada(request):
     if request.GET:
@@ -607,6 +663,21 @@ def exposicion_buscar_avanzada(request):
         formulario = BusquedaAvanzadaExposicionForm()
         return render(request, 'exposicion/busqueda_avanzada.html', {"formulario": formulario})
     
+def exposicion_eliminar(request, exposicion_id):
+    try:
+        headers = crear_cabecera()
+        response = requests.delete(
+            f'http://127.0.0.1:8000/api/v1/exposiciones/eliminar/{exposicion_id}',
+            headers=headers,
+        )
+        if response.status_code == requests.codes.ok:
+            messages.success(request, "Exposición eliminada correctamente.")
+        else:
+            messages.error(request, "No se pudo eliminar la exposición.")
+    except Exception as err:
+        messages.error(request, f"Ocurrió un error: {err}")
+
+    return redirect("listar_exposiciones")  # Redirigir siempre a la lista de exposiciones
     
 def entrada_buscar_avanzada(request):
     if request.GET:
@@ -665,6 +736,49 @@ def entrada_buscar_avanzada(request):
     else:
         formulario = BusquedaAvanzadaEntradaForm()
         return render(request, 'entrada/busqueda_avanzada.html', {"formulario": formulario})
+    
+# POST visita guiada    
+def visita_guiada_create(request):
+    print("✅ Se ha accedido a la vista de creación de visitas guiadas")  # 🔍 Verificar si se entra a la vista
+    
+    if request.method == "POST":
+        print("✅ Se recibió una solicitud POST")  # 🔍 Comprobar que se detecta la petición POST
+        formulario = VisitaGuiadaForm(request.POST)
+
+        if formulario.is_valid():
+            print("✅ El formulario es válido")  # 🔍 Confirmar que el formulario pasa validaciones
+            
+            datos = formulario.cleaned_data.copy()
+
+            print("📡 Datos que se enviarán a la API:", datos)
+
+            datos["guias"] = list(map(int, request.POST.getlist("guias")))
+            datos["visitantes"] = list(map(int, request.POST.getlist("visitantes")))
+            datos["duracion"] = f"0 {datos['duracion']}"  # Para asegurar compatibilidad con la API
+
+            headers = crear_cabecera()
+
+            response = requests.post(
+                "http://127.0.0.1:8000/api/v1/visitasguiadas/crear",
+                headers=headers,
+                json=datos
+            )
+
+            print("📡 Respuesta del servidor:", response.status_code, response.text)
+
+            if response.status_code == 201:
+                messages.success(request, "La visita guiada se ha creado correctamente.")
+                return redirect("listar_visitas_guiadas")
+
+        else:
+            print("❌ El formulario NO es válido")  # 🔍 Si no es válido, muestra los errores
+            print(formulario.errors)
+
+    else:
+        formulario = VisitaGuiadaForm()
+    
+    return render(request, "visita_guiada/create.html", {"formulario": formulario})
+
     
 def tratar_errores(request,codigo):
     if codigo == 404:

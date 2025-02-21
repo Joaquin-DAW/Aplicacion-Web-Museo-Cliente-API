@@ -69,5 +69,17 @@
               </li>
             </ul>
           </li>
+          <!-- Grupo para VisitasGuiadas -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="museoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Visita Guiada</a>
+            <ul class="dropdown-menu" aria-labelledby="museoDropdown">
+              <li>
+                <a class="dropdown-item" href="{% url 'listar_visitas_guiadas' %}">Listado de Visitas Guiadas</a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="{% url 'visita_guiada_create' %}">Crear Visita Guiada</a>
+              </li>
+            </ul>
+          </li>
   </div>
 </nav>

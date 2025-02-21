@@ -354,3 +354,154 @@ class MuseoEditarNombreForm(forms.Form):
         max_length=200,
         help_text="Máximo 200 caracteres"
     )
+    
+# Crear formulario PATCH para actualizar la capacidad de una exposición
+
+class ExposicionEditarCapacidadForm(forms.Form):
+    capacidad = forms.IntegerField(
+        label="Nueva Capacidad",
+        required=True,
+        min_value=1,
+        help_text="Capacidad máxima de la exposición"
+    )
+    
+# POST Visita Guiada    
+import requests
+import environ
+from django import forms
+from datetime import timedelta
+
+env = environ.Env()
+
+class VisitaGuiadaForm(forms.Form):
+    nombre_visita_guia = forms.CharField(
+        label="Nombre de la Visita Guiada",
+        required=True,
+        max_length=100,
+        help_text="Máximo 100 caracteres."
+    )
+    duracion = forms.CharField(
+        label="Duración",
+        required=True,
+        help_text="Formato esperado: HH:MM:SS",
+        widget=forms.TextInput(attrs={"placeholder": "HH:MM:SS"})
+    )
+    
+    capacidad_maxima = forms.IntegerField(
+        label="Capacidad Máxima",
+        required=True,
+        min_value=1,
+        help_text="Número máximo de personas permitidas."
+    )
+    idioma = forms.ChoiceField(
+        label="Idioma",
+        required=True,
+        choices=[('espanol', 'Español'), ('ingles', 'Inglés')],
+        help_text="Seleccione el idioma de la visita."
+    )
+    guias = forms.MultipleChoiceField(
+        label="Guías",
+        required=True,
+        choices=[],  # Se llenará en `__init__`
+        widget=forms.SelectMultiple(attrs={"size": 5}),  # Permitir selección múltiple
+        help_text="Seleccione los guías disponibles."
+    )
+    visitantes = forms.MultipleChoiceField(
+        label="Visitantes",
+        required=True,
+        choices=[],  # Se llenará en `__init__`
+        widget=forms.SelectMultiple(attrs={"size": 5}),
+        help_text="Seleccione los visitantes."
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(VisitaGuiadaForm, self).__init__(*args, **kwargs)
+        self.fields['guias'].choices = self.obtener_guias()
+        self.fields['visitantes'].choices = self.obtener_visitantes()
+
+        # Cargar guías disponibles
+        guias_disponibles = self.obtener_guias()
+        self.fields["guias"] = forms.MultipleChoiceField(
+            choices=guias_disponibles,
+            widget=forms.SelectMultiple(),
+            required=True,
+            help_text="Seleccione los guías disponibles."
+        )
+
+        # Cargar visitantes disponibles
+        visitantes_disponibles = self.obtener_visitantes()
+        self.fields["visitantes"] = forms.MultipleChoiceField(
+            choices=visitantes_disponibles,
+            widget=forms.SelectMultiple(),
+            required=True,
+            help_text="Seleccione los visitantes que participarán."
+        )
+        
+    def clean_duracion(self):
+        """
+        Convierte el formato HH:MM a la duración esperada por Django.
+        """
+        duracion_str = self.cleaned_data.get("duracion")
+
+        try:
+            # Convertir HH:MM a timedelta
+            horas, minutos = map(int, duracion_str.split(":"))
+            return timedelta(hours=horas, minutes=minutos)  # 🔹 Solo horas y minutos
+        except ValueError:
+            raise forms.ValidationError("Formato incorrecto. Use HH:MM")  
+
+    def obtener_guias(self):
+        """
+        Obtiene la lista de guías desde la API.
+        """
+        headers = {
+            "Authorization": f"Bearer {env('TOKEN_ACCESO')}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            response = requests.get("http://127.0.0.1:8000/api/v1/guias", headers=headers)
+            if response.status_code == 200:
+                guias = response.json()
+                return [(guia["id"], guia["nombre"]) for guia in guias]
+        except requests.exceptions.RequestException as e:
+            print("⚠️ Error obteniendo guías:", e)
+
+        return []
+    
+    def clean_guias(self):
+        """
+        Convierte las guías seleccionadas en una lista de enteros.
+        """
+        guias = self.cleaned_data.get("guias")
+        if not guias:
+            raise forms.ValidationError("Debe seleccionar al menos un guía.")
+        return list(map(int, guias))  # ✅ Convertir IDs a enteros
+
+    def obtener_visitantes(self):
+        """
+        Obtiene la lista de visitantes desde la API.
+        """
+        headers = {
+            "Authorization": f"Bearer {env('TOKEN_ACCESO')}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            response = requests.get("http://127.0.0.1:8000/api/v1/visitantes", headers=headers)
+            if response.status_code == 200:
+                visitantes = response.json()
+                return [(visitante["id"], visitante["usuario"]) for visitante in visitantes]
+        except requests.exceptions.RequestException as e:
+            print("⚠️ Error obteniendo visitantes:", e)
+
+        return []
+    
+    def clean_visitantes(self):
+        """
+        Convierte los visitantes seleccionados en una lista de enteros.
+        """
+        visitantes = self.cleaned_data.get("visitantes")
+        if not visitantes:
+            raise forms.ValidationError("Debe seleccionar al menos un visitante.")
+        return list(map(int, visitantes))  # ✅ Convertir IDs a enteros

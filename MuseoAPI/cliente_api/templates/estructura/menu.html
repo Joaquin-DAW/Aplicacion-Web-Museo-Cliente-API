@@ -81,5 +81,17 @@
               </li>
             </ul>
           </li>
+          <!-- Grupo para Productos -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="museoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Productos</a>
+            <ul class="dropdown-menu" aria-labelledby="museoDropdown">
+              <li>
+                <a class="dropdown-item" href="{% url 'listar_productos' %}">Listado de Productos</a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="{% url 'producto_create' %}">Crear Producto</a>
+              </li>
+            </ul>
+          </li>
   </div>
 </nav>

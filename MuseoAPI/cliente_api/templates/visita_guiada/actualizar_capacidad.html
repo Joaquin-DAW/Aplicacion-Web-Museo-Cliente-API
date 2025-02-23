@@ -1,0 +1,17 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+
+{% load django_bootstrap5 %}
+
+<form action="{% url 'visita_guiada_editar_capacidad' visita.id %}" method="post"> 
+    {% csrf_token %}
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.capacidad_maxima show_label=True %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Actualizar Capacidad</button>
+</form> 
+
+{% endblock %}

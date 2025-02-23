@@ -4,12 +4,12 @@
             <a href="{% url 'listar_museos' %}">{{ museo.nombre|capfirst }}</a>
         </h5>
         <h6 class="card-subtitle mb-2 text-muted">Ubicación: {{ museo.ubicacion }}</h6>
-        <p class="card-text">Fecha de Fundación: {{ museo.fecha_fundacion|date:"d-m-Y" }}</p>
+        <p class="card-text">Fecha de Fundación: {{ museo.fecha_fundacion }}</p>
         <p class="card-text">{{ museo.descripcion }}</p>
         <div>
             <p class="card-text">Exposiciones:</p>
             <ul>
-                {% for exposicion in museo.exposiciones.all %}
+                {% for exposicion in museo.exposiciones %}
                     <li class="card-text">{{ exposicion.titulo }}</li>
                 {% endfor %}
             </ul>

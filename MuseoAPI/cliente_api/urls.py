@@ -28,4 +28,13 @@ urlpatterns = [
     
     path('visitasguiadas/', views.listar_visitas_guiadas, name='listar_visitas_guiadas'),
     path('visitasguiadas/crear/', views.visita_guiada_create, name='visita_guiada_create'),
+    path('visitasguiadas/editar/<int:visita_id>/', views.visita_guiada_editar, name='visita_guiada_editar'),
+    path('visitasguiadas/editar/capacidad/<int:visita_id>/', views.visita_guiada_editar_capacidad, name='visita_guiada_editar_capacidad'),
+    path('visitasguiadas/eliminar/<int:visita_id>/', views.visita_guiada_eliminar, name='visita_guiada_eliminar'),
+    
+    path('productos/', views.listar_productos, name='listar_productos'),
+    path('productos/crear/', views.producto_create, name='producto_create'),
+    path('productos/editar/<int:producto_id>/', views.producto_editar, name='producto_editar'),
+    path('productos/editar/stock/<int:producto_id>/', views.producto_editar_stock, name='producto_editar_stock'),
+    path('productos/eliminar/<int:producto_id>/', views.producto_eliminar, name='producto_eliminar'),
 ]

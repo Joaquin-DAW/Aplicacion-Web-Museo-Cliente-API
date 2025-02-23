@@ -1,0 +1,17 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+
+{% load django_bootstrap5 %}
+
+<form action="{% url 'producto_editar_stock' producto.id %}" method="post"> 
+    {% csrf_token %}
+
+    <div class="mb-4">
+        {% bootstrap_field formulario.stock show_label=True %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Actualizar Stock</button>
+</form> 
+
+{% endblock %}

@@ -505,3 +505,110 @@ class VisitaGuiadaForm(forms.Form):
         if not visitantes:
             raise forms.ValidationError("Debe seleccionar al menos un visitante.")
         return list(map(int, visitantes))  # ✅ Convertir IDs a enteros
+    
+# PATCH - Formulario para actualizar la capacidad máxima de una visita guiada
+class VisitaGuiadaEditarCapacidadForm(forms.Form):
+    capacidad_maxima = forms.IntegerField(
+        label="Nueva Capacidad Máxima",
+        required=True,
+        min_value=1,
+        help_text="Capacidad máxima de la visita guiada."
+    )
+    
+
+# POST - Crear Producto
+
+def obtener_tiendas():
+    """
+    Obtiene la lista de tiendas disponibles desde la API.
+    """
+    headers = {
+        "Authorization": f"Bearer {env('TOKEN_ACCESO')}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.get("http://127.0.0.1:8000/api/v1/tiendas", headers=headers)
+        if response.status_code == 200:
+            tiendas = response.json()
+            return [(tienda["id"], tienda["nombre"]) for tienda in tiendas]  # ✅ Retorna (id, nombre)
+    except requests.exceptions.RequestException as e:
+        print("⚠️ Error obteniendo tiendas:", e)
+
+    return []  # ❌ Si hay error, retorna una lista vacía
+
+class ProductoForm(forms.Form):
+    nombre = forms.CharField(
+        label="Nombre del Producto",
+        required=True,
+        max_length=100,
+        help_text="Máximo 100 caracteres."
+    )
+    descripcion = forms.CharField(
+        label="Descripción",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Añade una breve descripción."}),
+        help_text="Breve descripción del producto."
+    )
+    precio = forms.DecimalField(
+        label="Precio",
+        required=True,
+        min_value=0.01,
+        max_digits=8,
+        decimal_places=2,
+        help_text="Ingrese el precio del producto."
+    )
+    stock = forms.IntegerField(
+        label="Stock",
+        required=True,
+        min_value=0,
+        help_text="Cantidad de unidades disponibles."
+    )
+    
+    tiendas = forms.MultipleChoiceField(
+        label="Tiendas",
+        required=True,
+        choices=[],  
+        widget=forms.SelectMultiple(attrs={"size": 5}),
+        help_text="Seleccione las tiendas donde estará disponible el producto."
+    )
+    
+    # Campos de Inventario adicionales
+    stock_inicial = forms.IntegerField(
+        label="Stock Inicial",
+        required=True,
+        min_value=1,
+        help_text="Stock inicial del producto en cada tienda."
+    )
+    cantidad_vendida = forms.IntegerField(
+        label="Cantidad Vendida",
+        required=True,
+        min_value=0,
+        help_text="Cantidad de productos vendidos hasta ahora."
+    )
+    fecha_ultima_venta = forms.DateField(
+        label="Última Venta",
+        required=False,
+        widget=forms.SelectDateWidget(years=range(2000, 2030)),
+        help_text="Fecha de la última venta del producto."
+    )
+    ubicacion_almacen = forms.CharField(
+        label="Ubicación en almacén",
+        required=False,
+        max_length=100,
+        help_text="Ubicación del producto en el almacén."
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(ProductoForm, self).__init__(*args, **kwargs)
+        self.fields['tiendas'].choices = obtener_tiendas()
+        
+        
+# PATCH - Formulario para actualizar el stock disponible de un producto
+class ProductoEditarStockForm(forms.Form):
+    stock = forms.IntegerField(
+        label="Nuevo Stock Disponible",
+        required=True,
+        min_value=0,
+        help_text="Ingrese la cantidad actualizada de stock."
+    )

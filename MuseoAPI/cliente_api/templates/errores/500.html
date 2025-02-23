@@ -1,0 +1,9 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+    <div class="container text-center">
+        <h1 class="display-4">500 - Error interno del servidor</h1>
+        <p class="lead">Ha ocurrido un problema inesperado. Estamos trabajando en ello.</p>
+        <a href="{% url 'listar_productos' %}" class="btn btn-primary">Volver al inicio</a>
+    </div>
+{% endblock %}

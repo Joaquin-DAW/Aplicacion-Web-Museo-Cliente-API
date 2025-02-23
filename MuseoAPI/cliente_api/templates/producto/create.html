@@ -1,0 +1,79 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+
+{% load django_bootstrap5 %}
+
+<form action="{% url 'producto_create' %}" method="post">
+    {% csrf_token %}
+
+    <div class="mb-4">
+        <label for="{{ formulario.nombre.id_for_label }}" class="form-label">{{ formulario.nombre.label }}: </label>
+        <input name="{{ formulario.nombre.html_name }}" type="text" class="form-control"
+               id="{{ formulario.nombre.id_for_label }}" value="{{ formulario.nombre.value|default:'' }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.descripcion.id_for_label }}" class="form-label">{{ formulario.descripcion.label }}: </label>
+        <textarea name="{{ formulario.descripcion.html_name }}" class="form-control"
+                  id="{{ formulario.descripcion.id_for_label }}">{{ formulario.descripcion.value|default:'' }}</textarea>
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.precio.id_for_label }}" class="form-label">{{ formulario.precio.label }}: </label>
+        <input name="{{ formulario.precio.html_name }}" type="number" step="0.01" class="form-control"
+               id="{{ formulario.precio.id_for_label }}" value="{{ formulario.precio.value }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.stock.id_for_label }}" class="form-label">{{ formulario.stock.label }}: </label>
+        <input name="{{ formulario.stock.html_name }}" type="number" class="form-control"
+               id="{{ formulario.stock.id_for_label }}" value="{{ formulario.stock.value }}">
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.tiendas.id_for_label }}" class="form-label">{{ formulario.tiendas.label }}: </label>
+        <select name="{{ formulario.tiendas.html_name }}" class="form-control" multiple>
+            {% for tienda_id, tienda_nombre in formulario.tiendas.field.choices %}
+                <option value="{{ tienda_id }}">{{ tienda_nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Campos de Inventario -->
+    <div class="mb-4">
+        <label for="{{ formulario.stock_inicial.id_for_label }}" class="form-label">{{ formulario.stock_inicial.label }}: </label>
+        <input name="{{ formulario.stock_inicial.html_name }}" type="number" class="form-control"
+               id="{{ formulario.stock_inicial.id_for_label }}" value="{{ formulario.stock_inicial.value }}">
+        <div class="form-text">{{ formulario.stock_inicial.help_text }}</div>
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.cantidad_vendida.id_for_label }}" class="form-label">{{ formulario.cantidad_vendida.label }}: </label>
+        <input name="{{ formulario.cantidad_vendida.html_name }}" type="number" class="form-control"
+               id="{{ formulario.cantidad_vendida.id_for_label }}" value="{{ formulario.cantidad_vendida.value }}">
+        <div class="form-text">{{ formulario.cantidad_vendida.help_text }}</div>
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.fecha_ultima_venta.id_for_label }}" class="form-label">{{ formulario.fecha_ultima_venta.label }}: </label>
+        <input name="{{ formulario.fecha_ultima_venta.html_name }}" type="date" class="form-control"
+               id="{{ formulario.fecha_ultima_venta.id_for_label }}" value="{{ formulario.fecha_ultima_venta.value|default:'' }}">
+        <div class="form-text">{{ formulario.fecha_ultima_venta.help_text }}</div>
+    </div>
+
+    <div class="mb-4">
+        <label for="{{ formulario.ubicacion_almacen.id_for_label }}" class="form-label">{{ formulario.ubicacion_almacen.label }}: </label>
+        <input name="{{ formulario.ubicacion_almacen.html_name }}" type="text" class="form-control"
+               id="{{ formulario.ubicacion_almacen.id_for_label }}" value="{{ formulario.ubicacion_almacen.value|default:'' }}">
+        <div class="form-text">{{ formulario.ubicacion_almacen.help_text }}</div>
+    </div>
+    <!-- Fin de los campos de Inventario -->
+
+    <div class="mb-4">
+        <button type="submit" class="btn btn-primary">Crear Producto</button>
+    </div>
+
+</form>
+
+{% endblock %}

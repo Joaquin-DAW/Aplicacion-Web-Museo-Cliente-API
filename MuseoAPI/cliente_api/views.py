@@ -567,11 +567,8 @@ def exposiciones_editar(request, exposicion_id):
     exposicion = helper.obtener_exposicion(exposicion_id)
     
     if exposicion is None:
-            return tratar_errores(request, 404)
-
-    if exposicion is None:  # 🚨 Evita el error si `exposicion` no existe
         messages.error(request, "No se pudo obtener la exposición. Verifica que exista y que la API esté funcionando correctamente.")
-        return redirect("listar_exposiciones")  # 🔹 Redirige para evitar el error
+        return redirect("listar_exposiciones")  
 
     # Crear el formulario con los datos iniciales de la exposición
     formulario = ExposicionForm(
@@ -582,7 +579,7 @@ def exposiciones_editar(request, exposicion_id):
             'fecha_fin': datetime.strptime(exposicion['fecha_fin'], '%Y-%m-%d').date() if exposicion.get('fecha_fin') else None,
             'descripcion': exposicion.get('descripcion', ''),
             'capacidad': exposicion.get('capacidad', 0),
-            'museo': exposicion.get('museo', '')  # 🔹 Asegura que se pase correctamente
+            'museo': exposicion.get('museo', '')  
         }
     )
 
@@ -593,30 +590,35 @@ def exposiciones_editar(request, exposicion_id):
         if datos["fecha_fin"]:
             datos["fecha_fin"] = datos["fecha_fin"].strftime('%Y-%m-%d')
 
-        datos["museo"] = int(datos["museo"])  # ✅ Convertimos el ID del museo a entero
+        datos["museo"] = int(datos["museo"])  
+
+        # Obtener el token de sesión del usuario autenticado
+        token = request.session.get("token", None)
+        if not token:
+            messages.error(request, "No se encontró el token de autenticación.")
+            return redirect("login")
 
         url_correcta = f"api/v1/exposiciones/editar/{exposicion_id}"
-        print("🔗 Endpoint generado:", url_correcta)  # 🔹 Debug
+        print("🔗 Endpoint generado:", url_correcta)  # Debug
 
-        cliente = cliente_api(env("TOKEN_ACCESO"), "PUT", url_correcta, datos)
+        # Usar `cliente_api` para la petición
+        cliente = cliente_api(token, "PUT", url_correcta, datos)
         cliente.realizar_peticion_api()
 
         if cliente.es_respuesta_correcta():
             messages.success(request, "La exposición ha sido actualizada correctamente.")
             return redirect("listar_exposiciones")
-        elif cliente.es_error_validacion_datos():
-            cliente.incluir_errores_formulario(formulario)
         else:
-            print("❌ ERROR: Ocurrió un problema en la actualización de la exposición.")  
-            print("📡 Enviando petición PUT a:", f'{API_BASE_URL}exposiciones/editar/{exposicion_id}')
-            return tratar_errores(request, cliente.codigoRespuesta)
+            messages.error(request, "Error al actualizar la exposición.")
+            print("Código HTTP:", cliente.codigo_respuesta)
+            print("Detalles del error:", cliente.datos_respuesta)
 
     return render(request, "exposicion/actualizar.html", {"formulario": formulario, "exposicion": exposicion})
 
 #PATCH
 def exposicion_editar_capacidad(request, exposicion_id):
     datosFormulario = None
-    exposicion = helper.obtener_exposicion(exposicion_id)  # Obtenemos la exposición
+    exposicion = helper.obtener_exposicion(exposicion_id)  
 
     formulario = ExposicionEditarCapacidadForm(
         datosFormulario,
@@ -626,44 +628,32 @@ def exposicion_editar_capacidad(request, exposicion_id):
     if request.method == "POST":
         try:
             formulario = ExposicionEditarCapacidadForm(request.POST)
-            headers = crear_cabecera()
             datos = request.POST.copy()
 
-            response = requests.patch(
-                f"{API_BASE_URL}exposiciones/editar/capacidad/{exposicion_id}/",  # 📌 Endpoint correcto
-                headers=headers,
-                data=json.dumps(datos)
-            )
-            
-            if response.status_code == 404:
-                return tratar_errores(request, 404)
-            elif response.status_code == 500:
-                return tratar_errores(request, 500)
-                    
-            response.raise_for_status()
+            # Obtener token del usuario autenticado
+            token = request.session.get("token", None)
+            if not token:
+                messages.error(request, "No se encontró el token de autenticación.")
+                return redirect("login")
 
-            if response.status_code == 200:
+            # Usar `cliente_api` para la petición PATCH
+            cliente = cliente_api(token, "PATCH", f"api/v1/exposiciones/editar/capacidad/{exposicion_id}", datos)
+            cliente.realizar_peticion_api()
+
+            if cliente.es_respuesta_correcta():
                 messages.success(request, "Capacidad de la exposición actualizada correctamente.")
                 return redirect("listar_exposiciones")
             else:
-                print(response.status_code)
-                response.raise_for_status()
+                messages.error(request, "Error al actualizar la capacidad de la exposición.")
+                print("Código HTTP:", cliente.codigo_respuesta)
+                print("Detalles del error:", cliente.datos_respuesta)
 
-        except requests.exceptions.HTTPError as http_err:
-            print(f'Hubo un error en la petición: {http_err}')
-            if response.status_code == 400:
-                errores = response.json()
-                for error in errores:
-                    formulario.add_error(error, errores[error])
-                return render(request, 'exposicion/actualizar_capacidad.html', {"formulario": formulario, "exposicion": exposicion})
-            else:
-                print("❌ ERROR: Ocurrió un problema en la actualización de la exposición.")  
-                print("📡 Enviando petición PATCH a:", f'{API_BASE_URL}exposiciones/editar/capacidad/{exposicion_id}')
-
-            messages.error(request, "Error al actualizar la exposición. Revisa la consola para más detalles.") 
-            return redirect("listar_exposiciones")
+        except requests.exceptions.RequestException as err:
+            messages.error(request, f"Error de conexión: {err}")
+            return tratar_errores(request, 500)
 
     return render(request, 'exposicion/actualizar_capacidad.html', {"formulario": formulario, "exposicion": exposicion})
+
     
 def exposicion_buscar_avanzada(request):
     if request.GET:
@@ -733,28 +723,29 @@ def exposicion_buscar_avanzada(request):
 #Delete Exposicion
 def exposicion_eliminar(request, exposicion_id):
     try:
-        headers = crear_cabecera()
-        response = requests.delete(
-            f'http://127.0.0.1:8000/api/v1/exposiciones/eliminar/{exposicion_id}',
-            headers=headers,
-        )
-        
-        if response.status_code == 404:
-                return tratar_errores(request, 404)
-        elif response.status_code == 500:
-                return tratar_errores(request, 500)
-            
-        response.raise_for_status()
-        
-        if response.status_code == requests.codes.ok:
+        # Obtener token del usuario autenticado
+        token = request.session.get("token", None)
+        if not token:
+            messages.error(request, "No se encontró el token de autenticación.")
+            return redirect("login")
+
+        # Usar `cliente_api` para la petición DELETE
+        cliente = cliente_api(token, "DELETE", f"api/v1/exposiciones/eliminar/{exposicion_id}")
+        cliente.realizar_peticion_api()
+
+        if cliente.es_respuesta_correcta():
             messages.success(request, "Exposición eliminada correctamente.")
         else:
             messages.error(request, "No se pudo eliminar la exposición.")
+            print("Código HTTP:", cliente.codigo_respuesta)
+            print("Detalles del error:", cliente.datos_respuesta)
+
     except Exception as err:
         messages.error(request, f"Ocurrió un error: {err}")
 
-    return redirect("listar_exposiciones")  # Redirigir siempre a la lista de exposiciones
-    
+    return redirect("listar_exposiciones")
+
+#Buscar avanzada Entrada    
 def entrada_buscar_avanzada(request):
     if request.GET:
         formulario = BusquedaAvanzadaEntradaForm(request.GET)
@@ -822,14 +813,14 @@ def entrada_buscar_avanzada(request):
     
 # POST visita guiada    
 def visita_guiada_create(request):
-    print("✅ Se ha accedido a la vista de creación de visitas guiadas")  # 🔍 Verificar si se entra a la vista
+    print("Se ha accedido a la vista de creación de visitas guiadas")  #Verificar si se entra a la vista
     
     if request.method == "POST":
-        print("✅ Se recibió una solicitud POST")  # 🔍 Comprobar que se detecta la petición POST
+        print("Se recibió una solicitud POST")  # Comprobar que se detecta la petición POST
         formulario = VisitaGuiadaForm(request.POST)
 
         if formulario.is_valid():
-            print("✅ El formulario es válido")  # 🔍 Confirmar que el formulario pasa validaciones
+            print("El formulario es válido")  # Confirmar que el formulario pasa validaciones
             
             datos = formulario.cleaned_data.copy()
 
@@ -839,29 +830,26 @@ def visita_guiada_create(request):
             datos["visitantes"] = list(map(int, request.POST.getlist("visitantes")))
             datos["duracion"] = f"0 {datos['duracion']}"  # Para asegurar compatibilidad con la API
 
-            headers = crear_cabecera()
+            # Obtener token del usuario autenticado
+            token = request.session.get("token", None)
+            if not token:
+                messages.error(request, "No se encontró el token de autenticación.")
+                return redirect("login")
 
-            response = requests.post(
-                "http://127.0.0.1:8000/api/v1/visitasguiadas/crear",
-                headers=headers,
-                json=datos
-            )
-            
-            if response.status_code == 404:
-                return tratar_errores(request, 404)
-            elif response.status_code == 500:
-                return tratar_errores(request, 500)
-            
-            response.raise_for_status()
+            # Usar `cliente_api` para la petición
+            cliente = cliente_api(token, "POST", "api/v1/visitasguiadas/crear", datos)
+            cliente.realizar_peticion_api()
 
-            print("📡 Respuesta del servidor:", response.status_code, response.text)
-
-            if response.status_code == 201:
+            if cliente.es_respuesta_correcta():
                 messages.success(request, "La visita guiada se ha creado correctamente.")
                 return redirect("listar_visitas_guiadas")
+            else:
+                messages.error(request, "Error al crear la visita guiada.")
+                print("Código HTTP:", cliente.codigo_respuesta)
+                print("Detalles del error:", cliente.datos_respuesta)
 
         else:
-            print("❌ El formulario NO es válido")  # 🔍 Si no es válido, muestra los errores
+            print("El formulario NO es válido")  # 🔍 Si no es válido, muestra los errores
             print(formulario.errors)
 
     else:
@@ -882,9 +870,6 @@ def visita_guiada_editar(request, visita_id):
     visita = helper.obtener_visita_guiada(visita_id)
     
     if visita is None:
-            return tratar_errores(request, 404)
-
-    if visita is None:  # 🚨 Evitar errores si la visita guiada no existe
         messages.error(request, "No se pudo obtener la visita guiada. Verifica que exista y que la API esté funcionando correctamente.")
         return redirect("listar_visitas_guiadas")  
 
@@ -911,21 +896,26 @@ def visita_guiada_editar(request, visita_id):
         datos["guias"] = list(map(int, request.POST.getlist("guias")))
         datos["visitantes"] = list(map(int, request.POST.getlist("visitantes")))
 
+        # Obtener token del usuario autenticado
+        token = request.session.get("token", None)
+        if not token:
+            messages.error(request, "No se encontró el token de autenticación.")
+            return redirect("login")
+
         url_correcta = f"api/v1/visitasguiadas/editar/{visita_id}/"
         print("🔗 Endpoint generado:", url_correcta)
 
-        cliente = cliente_api(env("TOKEN_ACCESO"), "PUT", url_correcta, datos)
+        # Usar `cliente_api` para la petición
+        cliente = cliente_api(token, "PUT", url_correcta, datos)
         cliente.realizar_peticion_api()
 
         if cliente.es_respuesta_correcta():
             messages.success(request, "La visita guiada ha sido actualizada correctamente.")
             return redirect("listar_visitas_guiadas")
-        elif cliente.es_error_validacion_datos():
-            cliente.incluir_errores_formulario(formulario)
         else:
-            print("❌ ERROR: Ocurrió un problema en la actualización de la visita guiada.")
-            print("📡 Enviando petición PUT a:", f'{API_BASE_URL}visitasguiadas/editar/{visita_id}')
-            return tratar_errores(request, cliente.codigoRespuesta)
+            messages.error(request, "Error al actualizar la visita guiada.")
+            print("Código HTTP:", cliente.codigo_respuesta)
+            print("Detalles del error:", cliente.datos_respuesta)
 
     return render(request, "visita_guiada/actualizar.html", {"formulario": formulario, "visita": visita})
 
@@ -950,70 +940,67 @@ def visita_guiada_editar_capacidad(request, visita_id):
 
         if formulario.is_valid():
             try:
-                headers = crear_cabecera()
-                datos = request.POST.copy()
+                datos = formulario.cleaned_data.copy()
 
-                response = requests.patch(
-                    f"{API_BASE_URL}visitasguiadas/editar/capacidad/{visita_id}/",
-                    headers=headers,
-                    data=json.dumps(datos)
-                )
-                
-                if response.status_code == 404:
-                    return tratar_errores(request, 404)
-                elif response.status_code == 500:
-                    return tratar_errores(request, 500)
-                
-                response.raise_for_status()
+                # Obtener token del usuario autenticado
+                token = request.session.get("token", None)
+                if not token:
+                    messages.error(request, "No se encontró el token de autenticación.")
+                    return redirect("login")
 
-                if response.status_code == 200:
+                url_correcta = f"api/v1/visitasguiadas/editar/capacidad/{visita_id}/"
+                print("🔗 Endpoint generado:", url_correcta)
+
+                # Usar `cliente_api` para la petición
+                cliente = cliente_api(token, "PATCH", url_correcta, datos)
+                cliente.realizar_peticion_api()
+
+                if cliente.es_respuesta_correcta():
                     messages.success(request, "Capacidad de la visita guiada actualizada correctamente.")
                     return redirect("listar_visitas_guiadas")
                 else:
-                    response.raise_for_status()
+                    messages.error(request, "Error al actualizar la capacidad de la visita guiada.")
+                    print("Código HTTP:", cliente.codigo_respuesta)
+                    print("Detalles del error:", cliente.datos_respuesta)
 
-            except requests.exceptions.HTTPError as http_err:
-                print(f'Hubo un error en la petición: {http_err}')
-                if response.status_code == 400:
-                    errores = response.json()
-                    for error in errores:
-                        formulario.add_error(error, errores[error])
-                    return render(request, 'visita_guiada/actualizar_capacidad.html', {"formulario": formulario, "visita": visita})
-                else:
-                    print("❌ ERROR: Ocurrió un problema en la actualización de la visita guiada.")
-                    print("📡 Enviando petición PATCH a:", f'{API_BASE_URL}visitasguiadas/editar/capacidad/{visita_id}')
-
-                messages.error(request, "Error al actualizar la visita guiada. Revisa la consola para más detalles.")
-                return redirect("listar_visitas_guiadas")
+            except Exception as err:
+                messages.error(request, f"Ocurrió un error: {err}")
+                print("❌ ERROR: Ocurrió un problema en la actualización de la visita guiada.")
+                print("📡 Enviando petición PATCH a:", f'{API_BASE_URL}visitasguiadas/editar/capacidad/{visita_id}')
 
     return render(request, 'visita_guiada/actualizar_capacidad.html', {"formulario": formulario, "visita": visita})
+
 
 # DELETE Visita Guiada
 def visita_guiada_eliminar(request, visita_id):
     try:
-        headers = crear_cabecera()
-        response = requests.delete(
-            f'http://127.0.0.1:8000/api/v1/visitasguiadas/eliminar/{visita_id}',
-            headers=headers,
-        )
-        
-        if response.status_code == 404:
-                return tratar_errores(request, 404)
-        elif response.status_code == 500:
-                return tratar_errores(request, 500)
-            
-        response.raise_for_status()
-        
-        if response.status_code == requests.codes.ok:
+        # Obtener token del usuario autenticado
+        token = request.session.get("token", None)
+        if not token:
+            messages.error(request, "No se encontró el token de autenticación.")
+            return redirect("login")
+
+        url_correcta = f"api/v1/visitasguiadas/eliminar/{visita_id}/"
+        print("🔗 Endpoint generado:", url_correcta)
+
+        # Usar `cliente_api` para la petición
+        cliente = cliente_api(token, "DELETE", url_correcta)
+        cliente.realizar_peticion_api()
+
+        if cliente.es_respuesta_correcta():
             messages.success(request, "Visita guiada eliminada correctamente.")
         else:
             messages.error(request, "No se pudo eliminar la visita guiada.")
+            print("Código HTTP:", cliente.codigo_respuesta)
+            print("Detalles del error:", cliente.datos_respuesta)
+
     except Exception as err:
         messages.error(request, f"Ocurrió un error: {err}")
 
     return redirect("listar_visitas_guiadas")  # Redirigir siempre a la lista de visitas guiadas
 
 
+# GET - Listar productos
 def listar_productos(request):
     headers = crear_cabecera()
     response = requests.get(f'{API_BASE_URL}productos', headers=headers)
@@ -1034,14 +1021,14 @@ def listar_productos(request):
 
 # POST Producto
 def producto_create(request):
-    print("✅ Se ha accedido a la vista de creación de productos")  
+    print("Se ha accedido a la vista de creación de productos")  
 
     if request.method == "POST":
-        print("✅ Se recibió una solicitud POST")  
+        print("Se recibió una solicitud POST")  
         formulario = ProductoForm(request.POST)
 
         if formulario.is_valid():
-            print("✅ El formulario es válido")  
+            print("El formulario es válido")  
 
             datos = formulario.cleaned_data.copy()
             
@@ -1051,37 +1038,38 @@ def producto_create(request):
             # Convertir Decimal a float para JSON
             datos["precio"] = float(datos["precio"])  
 
-            print(" Datos que se enviarán a la API:", datos)
+            print("Datos que se enviarán a la API:", datos)
 
-            headers = crear_cabecera()
+            # Obtener token del usuario autenticado
+            token = request.session.get("token", None)
+            if not token:
+                messages.error(request, "No se encontró el token de autenticación.")
+                return redirect("login")
 
-            response = requests.post(
-                "http://127.0.0.1:8000/api/v1/productos/crear",
-                headers=headers,
-                json=datos
-            )
-            
-            if response.status_code == 404:
-                return tratar_errores(request, 404)
-            elif response.status_code == 500:
-                return tratar_errores(request, 500)
-            
-            response.raise_for_status()
+            url_correcta = "api/v1/productos/crear"
+            print("🔗 Endpoint generado:", url_correcta)
 
-            print(" Respuesta del servidor:", response.status_code, response.text)
+            # Usar `cliente_api` para la petición
+            cliente = cliente_api(token, "POST", url_correcta, datos)
+            cliente.realizar_peticion_api()
 
-            if response.status_code == 201:
+            if cliente.es_respuesta_correcta():
                 messages.success(request, "El producto se ha creado correctamente.")
                 return redirect("listar_productos")
+            else:
+                messages.error(request, "Error al crear el producto.")
+                print("Código HTTP:", cliente.codigo_respuesta)
+                print("Detalles del error:", cliente.datos_respuesta)
 
         else:
-            print(" El formulario NO es válido")  
+            print("El formulario NO es válido")  
             print(formulario.errors)
 
     else:
         formulario = ProductoForm()
 
     return render(request, "producto/create.html", {"formulario": formulario})
+
 
 # PUT Producto
 def producto_editar(request, producto_id):
@@ -1091,13 +1079,23 @@ def producto_editar(request, producto_id):
     if request.method == "POST":
         datosFormulario = request.POST
 
-    # Obtener los datos del producto desde la API usando helper
-    producto = obtener_producto(producto_id)
+    # Obtener token del usuario autenticado
+    token = request.session.get("token", None)
+    if not token:
+        messages.error(request, "No se encontró el token de autenticación.")
+        return redirect("login")
 
-    if producto is None:
-        return tratar_errores(request, 404)
+    # Obtener los datos del producto desde la API
+    url_obtener_producto = f"api/v1/productos/{producto_id}/"
+    cliente = cliente_api(token, "GET", url_obtener_producto)
+    cliente.realizar_peticion_api()
 
-    print(f"📡 Producto recibido desde la API: {json.dumps(producto, indent=4, ensure_ascii=False)}")
+    if not cliente.es_respuesta_correcta():
+        messages.error(request, "No se pudo obtener la información del producto.")
+        return tratar_errores(request, cliente.codigo_respuesta)
+
+    producto = cliente.datos_respuesta
+    print(f"Producto recibido desde la API: {json.dumps(producto, indent=4, ensure_ascii=False)}")
 
     # Extraer detalles de inventario
     tiendas_iniciales = [item["tienda_id"] for item in producto.get("inventario", [])]
@@ -1131,102 +1129,100 @@ def producto_editar(request, producto_id):
             datos["fecha_ultima_venta"] = datos["fecha_ultima_venta"].strftime("%Y-%m-%d")
         datos["tiendas"] = list(map(int, request.POST.getlist("tiendas")))
 
-        resultado = actualizar_producto(producto_id, datos)
+        url_actualizar_producto = f"api/v1/productos/editar/{producto_id}/"
+        print("Endpoint generado:", url_actualizar_producto)
 
-        if resultado["success"]:
+        # Usar `cliente_api` para la actualización
+        cliente_actualizar = cliente_api(token, "PUT", url_actualizar_producto, datos)
+        cliente_actualizar.realizar_peticion_api()
+
+        if cliente_actualizar.es_respuesta_correcta():
             messages.success(request, "El producto ha sido actualizado correctamente.")
             return redirect("listar_productos")
         else:
-            messages.error(request, resultado["message"])
-            return tratar_errores(request, resultado["status"])
+            messages.error(request, "Error al actualizar el producto.")
+            print("Código HTTP:", cliente_actualizar.codigo_respuesta)
+            print("Detalles del error:", cliente_actualizar.datos_respuesta)
 
     return render(request, "producto/actualizar.html", {"formulario": formulario, "producto": producto})
+
 
 # PATCH - Editar solo el stock disponible de un producto
 def producto_editar_stock(request, producto_id):
     datosFormulario = None
-    producto = obtener_producto(producto_id)  # Obtiene el producto desde la API
 
-    if not producto:
-        messages.error(request, "No se pudo obtener el producto.")
-        return redirect("listar_productos")
+    # Obtener token del usuario autenticado
+    token = request.session.get("token", None)
+    if not token:
+        messages.error(request, "No se encontró el token de autenticación.")
+        return redirect("login")
+
+    # Obtener el producto desde la API
+    url_obtener_producto = f"api/v1/productos/{producto_id}/"
+    cliente = cliente_api(token, "GET", url_obtener_producto)
+    cliente.realizar_peticion_api()
+
+    if not cliente.es_respuesta_correcta():
+        messages.error(request, "No se pudo obtener la información del producto.")
+        return tratar_errores(request, cliente.codigo_respuesta)
+
+    producto = cliente.datos_respuesta
 
     # Asegurar que la clave correcta está en el diccionario
     formulario = ProductoEditarStockForm(
         datosFormulario,
-        initial={'stock': producto.get('stock', 0)}  # Usa el valor actual de stock
+        initial={'stock': producto.get('stock', 0)}
     )
 
     if request.method == "POST":
         formulario = ProductoEditarStockForm(request.POST)
 
         if formulario.is_valid():
-            try:
-                headers = crear_cabecera()
-                datos = request.POST.copy()
+            datos = request.POST.copy()
+            
+            url_actualizar_stock = f"api/v1/productos/editar/stock/{producto_id}/"
+            print("Endpoint generado:", url_actualizar_stock)
 
-                response = requests.patch(
-                    f"{API_BASE_URL}productos/editar/stock/{producto_id}/",
-                    headers=headers,
-                    data=json.dumps(datos)
-                )
-                
-                if response.status_code == 404:
-                    return tratar_errores(request, 404)
-                elif response.status_code == 500:
-                    return tratar_errores(request, 500)
-                
-                response.raise_for_status()
+            # Usar `cliente_api` para actualizar stock
+            cliente_actualizar = cliente_api(token, "PATCH", url_actualizar_stock, datos)
+            cliente_actualizar.realizar_peticion_api()
 
-                if response.status_code == 200:
-                    messages.success(request, "Stock del producto actualizado correctamente.")
-                    return redirect("listar_productos")
-                else:
-                    response.raise_for_status()
-
-            except requests.exceptions.HTTPError as http_err:
-                print(f'Hubo un error en la petición: {http_err}')
-                if response.status_code == 400:
-                    errores = response.json()
-                    for error in errores:
-                        formulario.add_error(error, errores[error])
-                    return render(request, 'producto/actualizar_stock.html', {"formulario": formulario, "producto": producto})
-                else:
-                    print(" ERROR: Ocurrió un problema en la actualización del stock del producto.")
-                    print(" Enviando petición PATCH a:", f'{API_BASE_URL}productos/editar/stock/{producto_id}')
-
-                messages.error(request, "Error al actualizar el stock del producto. Revisa la consola para más detalles.")
+            if cliente_actualizar.es_respuesta_correcta():
+                messages.success(request, "Stock del producto actualizado correctamente.")
                 return redirect("listar_productos")
+            else:
+                messages.error(request, "Error al actualizar el stock del producto.")
+                print("Código HTTP:", cliente_actualizar.codigo_respuesta)
+                print("Detalles del error:", cliente_actualizar.datos_respuesta)
 
-    return render(request, 'producto/actualizar_stock.html', {"formulario": formulario, "producto": producto})
+    return render(request, "producto/actualizar_stock.html", {"formulario": formulario, "producto": producto})
 
 # DELETE Producto
 def producto_eliminar(request, producto_id):
-    try:
-        headers = crear_cabecera()
-        response = requests.delete(
-            f'http://127.0.0.1:8000/api/v1/productos/eliminar/{producto_id}',
-            headers=headers,
-        )
-        
-        if response.status_code == 404:
-                return tratar_errores(request, 404)
-        elif response.status_code == 500:
-                return tratar_errores(request, 500)
-            
-        response.raise_for_status()
-        
-        if response.status_code == requests.codes.ok:
-            messages.success(request, "Producto eliminado correctamente.")
-        else:
-            messages.error(request, "No se pudo eliminar el producto.")
-    except Exception as err:
-        messages.error(request, f"Ocurrió un error: {err}")
+    # Obtener token del usuario autenticado
+    token = request.session.get("token", None)
+    if not token:
+        messages.error(request, "No se encontró el token de autenticación.")
+        return redirect("login")
 
-    return redirect("listar_productos")  # Redirigir siempre a la lista de productos
+    url_eliminar_producto = f"api/v1/productos/eliminar/{producto_id}/"
+    print("🔗 Endpoint generado:", url_eliminar_producto)
 
-# Vista de registro
+    # Usar `cliente_api` para eliminar producto
+    cliente = cliente_api(token, "DELETE", url_eliminar_producto)
+    cliente.realizar_peticion_api()
 
+    if cliente.es_respuesta_correcta():
+        messages.success(request, "Producto eliminado correctamente.")
+    else:
+        messages.error(request, "No se pudo eliminar el producto.")
+        print("Código HTTP:", cliente.codigo_respuesta)
+        print("Detalles del error:", cliente.datos_respuesta)
+
+    return redirect("listar_productos")
+
+
+# Vista de registro de usuario
 def registrar_usuario(request):
     if request.method == "POST":
         try:

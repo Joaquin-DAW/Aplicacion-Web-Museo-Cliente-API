@@ -299,31 +299,22 @@ def museo_create(request):
             try:
                 datos = formulario.cleaned_data.copy()
                 datos["fecha_fundacion"] = datos["fecha_fundacion"].strftime("%Y-%m-%d")
-                
-                headers = crear_cabecera()  # Incluir la cabecera con el token de autenticación
 
-                response = requests.post(
-                    "http://127.0.0.1:8000/api/v1/museos/crear",
-                    headers=headers,  # Usamos la cabecera aquí
-                    data=json.dumps(datos)
-                )
-                
-                if response.status_code == 404:
-                    return tratar_errores(request, 404)
-                elif response.status_code == 500:
-                        return tratar_errores(request, 500)
+                token = request.session.get("token", None)  #Obtener el token de sesión
+                if not token:
+                    messages.error(request, "No se encontró el token de autenticación.")
+                    return redirect("login")
 
-                response.raise_for_status()
-                
-                if response.status_code == 201:
+                cliente = cliente_api(token, "POST", "api/v1/museos/crear", datos)
+                cliente.realizar_peticion_api()
+
+                if cliente.es_respuesta_correcta():
                     messages.success(request, "El museo se ha creado correctamente.")
                     return redirect("listar_museos")
                 else:
-                    errores = response.json()
+                    errores = cliente.datos_respuesta
                     for error in errores:
                         formulario.add_error(error, errores[error])
-            except requests.exceptions.RequestException as e:
-                messages.error(request, "Error de conexión con la API.")
             except Exception as err:
                 messages.error(request, f"Ocurrió un error: {err}")
     else:
@@ -336,15 +327,15 @@ def museo_create(request):
 def museo_editar(request, museo_id):
     datosFormulario = None
 
-    # Si el método es POST, obtenemos los datos del formulario
     if request.method == "POST":
         datosFormulario = request.POST
-    
-    # Obtener los datos del museo desde el helper
+
+    # Obtener museo desde la API
     museo = helper.obtener_museo(museo_id)
     if museo is None:
         return tratar_errores(request, 404)
-    # Crear el formulario con los datos iniciales del museo
+
+    # Crear formulario con datos iniciales
     formulario = MuseoForm(
         datosFormulario,
         initial={
@@ -355,15 +346,19 @@ def museo_editar(request, museo_id):
         }
     )
 
-    # Si el formulario es enviado con método POST y es válido
     if request.method == "POST" and formulario.is_valid():
         datos = formulario.cleaned_data.copy()
         datos["fecha_fundacion"] = datos["fecha_fundacion"].strftime('%Y-%m-%d')
 
-        url_correcta = f"api/v1/museos/editar/{museo_id}"  # URL bien formada
-        print("🔗 Endpoint generado:", url_correcta)  # Verificar en la consola la URL generada
+        # Obtener token del usuario autenticado
+        token = request.session.get("token", None)
+        if not token:
+            messages.error(request, "No se encontró el token de autenticación.")
+            return redirect("login")
+
+        # Usar `cliente_api` para la petición
         try:
-            cliente = cliente_api(env("TOKEN_ACCESO"), "PUT", url_correcta, datos)
+            cliente = cliente_api(token, "PUT", f"api/v1/museos/editar/{museo_id}", datos)
             cliente.realizar_peticion_api()
 
             if cliente.es_respuesta_correcta():
@@ -372,18 +367,12 @@ def museo_editar(request, museo_id):
             elif cliente.es_error_validacion_datos():
                 cliente.incluir_errores_formulario(formulario)
             else:
-                # return tratar_errores(request, cliente.codigoRespuesta)
-                print("ERROR: Ocurrió un problema en la actualización del museo.")  
-                print("Código HTTP:", cliente.codigoRespuesta)
-                print("Detalles del error:", cliente.datosRespuesta) 
-                print("Enviando petición PUT a:", f'{API_BASE_URL}museos/editar/{museo_id}')
+                messages.error(request, "Error al actualizar el museo.")
+                print("Código HTTP:", cliente.codigo_respuesta)
+                print("Detalles del error:", cliente.datos_respuesta)
 
         except requests.exceptions.RequestException as err:
-            print(f"Error de conexión al actualizar el museo: {err}")
-            return tratar_errores(request, 500)
-
-        except Exception as e:
-            print(f"Error inesperado en museo_editar: {e}")
+            messages.error(request, f"Error de conexión al actualizar el museo: {err}")
             return tratar_errores(request, 500)
 
     return render(request, "museo/actualizar.html", {"formulario": formulario, "museo": museo})
@@ -391,78 +380,63 @@ def museo_editar(request, museo_id):
 
 def museo_editar_nombre(request, museo_id):
     datosFormulario = None
-    museo = helper.obtener_museo(museo_id)  # Obtenemos el museo
+    museo = helper.obtener_museo(museo_id)  
 
-    formulario = MuseoEditarNombreForm(datosFormulario,
-            initial={'nombre': museo['nombre']}
+    formulario = MuseoEditarNombreForm(
+        datosFormulario,
+        initial={'nombre': museo['nombre']}
     )
 
     if request.method == "POST":
         try:
             formulario = MuseoEditarNombreForm(request.POST)
-            headers = crear_cabecera()
             datos = request.POST.copy()
 
-            response = requests.patch(
-                f"{API_BASE_URL}museos/editar/nombre/{museo_id}",  # 📌 Endpoint correcto
-                headers=headers,
-                data=json.dumps(datos)
-            )
-            
-            if response.status_code == 404:
-                    return tratar_errores(request, 404)
-            elif response.status_code == 500:
-                    return tratar_errores(request, 500)
-                
-            response.raise_for_status()
+            token = request.session.get("token", None)
+            if not token:
+                messages.error(request, "No se encontró el token de autenticación.")
+                return redirect("login")
 
-            if response.status_code == 200:
+            # Usar `cliente_api` para la petición PATCH
+            cliente = cliente_api(token, "PATCH", f"api/v1/museos/editar/nombre/{museo_id}", datos)
+            cliente.realizar_peticion_api()
+
+            if cliente.es_respuesta_correcta():
                 messages.success(request, "Nombre del museo actualizado correctamente.")
                 return redirect("listar_museos")
             else:
-                print(response.status_code)
-                response.raise_for_status()
+                messages.error(request, "Error al actualizar el nombre del museo.")
+                print("Código HTTP:", cliente.codigo_respuesta)
+                print("Detalles del error:", cliente.datos_respuesta)
 
-        except requests.exceptions.HTTPError as http_err:
-            print(f'Hubo un error en la petición: {http_err}')
-            if response.status_code == 400:
-                errores = response.json()
-                for error in errores:
-                    formulario.add_error(error, errores[error])
-                return render(request, 'museo/actualizar_nombre.html', {"formulario": formulario, "museo": museo})
-            else:
-                #return mi_error_500(request)
-                print("❌ ERROR: Ocurrió un problema en la actualización del museo.")  
-                print("📡 Enviando petición PUT a:", f'{API_BASE_URL}museos/editar/{museo_id}')
-
-            messages.error(request, "Error al actualizar el museo. Revisa la consola para más detalles.") 
-            return redirect("listar_museos")  # 🔹 En lugar de llamar `tratar_errores()`, te redirige con un mensaje de error
+        except requests.exceptions.RequestException as err:
+            messages.error(request, f"Error de conexión: {err}")
+            return tratar_errores(request, 500)
 
     return render(request, 'museo/actualizar_nombre.html', {"formulario": formulario, "museo": museo})
 
 def museo_eliminar(request, museo_id):
     try:
-        headers = crear_cabecera()
-        response = requests.delete(
-            f'http://127.0.0.1:8000/api/v1/museos/eliminar/{museo_id}',
-            headers=headers,
-        )
-        
-        if response.status_code == 404:
-            return tratar_errores(request, 404)
-        elif response.status_code == 500:
-            return tratar_errores(request, 500)
-        
-        response.raise_for_status()
-        
-        if response.status_code == requests.codes.ok:
+        token = request.session.get("token", None)
+        if not token:
+            messages.error(request, "No se encontró el token de autenticación.")
+            return redirect("login")
+
+        # Usar `cliente_api` para la petición DELETE
+        cliente = cliente_api(token, "DELETE", f"api/v1/museos/eliminar/{museo_id}")
+        cliente.realizar_peticion_api()
+
+        if cliente.es_respuesta_correcta():
             messages.success(request, "Museo eliminado correctamente.")
         else:
             messages.error(request, "No se pudo eliminar el museo.")
+            print("Código HTTP:", cliente.codigo_respuesta)
+            print("Detalles del error:", cliente.datos_respuesta)
+
     except Exception as err:
         messages.error(request, f"Ocurrió un error: {err}")
 
-    return redirect("listar_museos")  # Redirigir siempre a la lista de museos
+    return redirect("listar_museos")
 
 
 def obra_buscar_avanzada(request):
@@ -539,7 +513,7 @@ def obra_buscar_avanzada(request):
 # POST
 def exposicion_create(request):
     """
-    Crea una nueva exposición enviando los datos a la API sin control de errores.
+    Crea una nueva exposición enviando los datos a la API con control de autenticación.
     """
     if request.method == "POST":
         formulario = ExposicionForm(request.POST)
@@ -553,32 +527,28 @@ def exposicion_create(request):
             if datos["fecha_fin"]:
                 datos["fecha_fin"] = datos["fecha_fin"].strftime("%Y-%m-%d")
 
-            # ✅ Asegurar que el ID del museo sea un número entero
+            # Asegurar que el ID del museo sea un número entero
             datos["museo"] = int(formulario.cleaned_data["museo"])
 
-            headers = crear_cabecera()
+            # Obtener el token de sesión del usuario autenticado
+            token = request.session.get("token", None)
+            if not token:
+                messages.error(request, "No se encontró el token de autenticación.")
+                return redirect("login")
 
             print("📡 Datos que se enviarán a la API:", datos)  # 🔍 Debug
 
-            # ✅ Enviar los datos correctamente en JSON
-            response = requests.post(
-                "http://127.0.0.1:8000/api/v1/exposiciones/crear",
-                headers=headers,
-                json=datos
-            )
-            
-            if response.status_code == 404:
-                return tratar_errores(request, 404)
-            elif response.status_code == 500:
-                return tratar_errores(request, 500)
-            
-            response.raise_for_status()
+            # Usar `cliente_api` para la petición
+            cliente = cliente_api(token, "POST", "api/v1/exposiciones/crear", datos)
+            cliente.realizar_peticion_api()
 
-            print("📡 Respuesta del servidor:", response.status_code)  # 🔍 Debug
-
-            if response.status_code == 201:
+            if cliente.es_respuesta_correcta():
                 messages.success(request, "La exposición se ha creado correctamente.")
                 return redirect("listar_exposiciones")
+            else:
+                messages.error(request, "Error al crear la exposición.")
+                print("Código HTTP:", cliente.codigo_respuesta)
+                print("Detalles del error:", cliente.datos_respuesta)
 
     else:
         formulario = ExposicionForm()  

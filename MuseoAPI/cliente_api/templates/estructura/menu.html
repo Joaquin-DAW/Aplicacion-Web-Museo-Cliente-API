@@ -12,8 +12,6 @@
           <strong>Número de usuario:</strong> {{ request.session.numero_usuario }}
         </p>
       {% endif %}
-      <p>Usuario autenticado: {{ request.user.is_authenticated }}</p>
-
 
       <ul class="navbar-nav me-auto">
         <!-- Grupo para Museos -->
@@ -30,10 +28,10 @@
               <a class="dropdown-item" href="{% url 'museo_buscar_avanzada' %}">Buscar (Avanzado) Museo</a>
             </li>
             <li>
-                {% if request.user.is_authenticated and perms.appmuseo.add_museo %}  <!-- Solo será visible para usuarios con este permiso -->
-                    <a class="dropdown-item" href="{% url 'museo_create' %}">Crear Museo</a>
-                {% endif %}
-            </li>
+              {% if request.session.token and request.session.usuario.rol == 1 or request.session.usuario.rol == 3 %}
+                  <a class="dropdown-item" href="{% url 'museo_create' %}">Crear Museo</a>
+              {% endif %}
+          </li>
           </ul>
         </li>
         <!-- Grupo para Obras -->

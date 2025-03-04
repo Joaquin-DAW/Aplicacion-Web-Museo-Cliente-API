@@ -73,8 +73,3 @@ Este documento detalla los permisos de acceso para cada tipo de usuario en la AP
 | Crear un Guía    | ❌ No                   | ❌ No      | ✅ Sí       |
 | Editar un Guía   | ❌ No                   | ❌ No      | ✅ Sí       |
 | Eliminar un Guía | ❌ No                   | ❌ No      | ✅ Sí       |
-
----
-
-✅ **Este formato es compatible con GitHub y se visualizará correctamente en el README.** 🚀  
-**Si deseas agregar más detalles, puedes modificar la tabla fácilmente.**

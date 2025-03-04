@@ -1,0 +1,21 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+<h2>Iniciar Sesión</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<form action="{% url 'login' %}" method="post">
+    {% load django_bootstrap5 %}
+    {% csrf_token %} 
+    {% bootstrap_form form %}         
+
+    {% bootstrap_button "Ingresar" button_type="submit" button_class="btn-primary" %}
+</form>
+{% endblock %}

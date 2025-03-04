@@ -1,97 +1,126 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">Museo Online</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-      <div class="collapse navbar-collapse" id="navbarNav">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Museo Online</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
       {% if request.user.is_authenticated %}
-      <p>
-          Nombre de usuario: {{ request.user }}<br>
-          Fecha Inicio: {{ request.session.fecha_inicio}}
-          Rol: {{ request.session.rol }} <br>
-          Número de usuario: {{ request.session.numero_usuario }}
-      </p>
+        <p class="ms-3 my-auto">
+          <strong>Usuario:</strong> {{ request.user }}<br />
+          <strong>Fecha Inicio:</strong> {{ request.session.fecha_inicio }}<br />
+          <strong>Rol:</strong> {{ request.session.rol }}<br />
+          <strong>Número de usuario:</strong> {{ request.session.numero_usuario }}
+        </p>
       {% endif %}
-        <ul class="navbar-nav">
-          <!-- Grupo para Museos -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="museoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Museos</a>
-            <ul class="dropdown-menu" aria-labelledby="museoDropdown">
-              <li>
-                <a class="dropdown-item" href="{% url 'listar_museos' %}">Listado de Museos</a>
-              </li>
-              <li>
-                  <a class="dropdown-item" href="{% url 'museo_buscar_simple' %}">Buscar Museo</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'museo_buscar_avanzada' %}">Buscar (Avanzado) Museo</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'museo_create' %}">Crear Museo</a>
-              </li>
-            </ul>
+      <p>Usuario autenticado: {{ request.user.is_authenticated }}</p>
+
+
+      <ul class="navbar-nav me-auto">
+        <!-- Grupo para Museos -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="museoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Museos</a>
+          <ul class="dropdown-menu" aria-labelledby="museoDropdown">
+            <li>
+              <a class="dropdown-item" href="{% url 'listar_museos' %}">Listado de Museos</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'museo_buscar_simple' %}">Buscar Museo</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'museo_buscar_avanzada' %}">Buscar (Avanzado) Museo</a>
+            </li>
+            <li>
+                {% if request.user.is_authenticated and perms.appmuseo.add_museo %}  <!-- Solo será visible para usuarios con este permiso -->
+                    <a class="dropdown-item" href="{% url 'museo_create' %}">Crear Museo</a>
+                {% endif %}
+            </li>
+          </ul>
+        </li>
+        <!-- Grupo para Obras -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="obraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Obras</a>
+          <ul class="dropdown-menu" aria-labelledby="obraDropdown">
+            <li>
+              <a class="dropdown-item" href="{% url 'listar_obras' %}">Listado de Obras</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'obra_buscar_avanzada' %}">Buscar (Avanzado) Obras</a>
+            </li>
+          </ul>
+        </li>
+        <!-- Grupo para Exposiciones -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="exposicionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Exposiciones</a>
+          <ul class="dropdown-menu" aria-labelledby="exposicionDropdown">
+            <li>
+              <a class="dropdown-item" href="{% url 'listar_exposiciones' %}">Listado de Exposiciones</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'exposicion_buscar_avanzada' %}">Buscar (Avanzado) Exposiciones</a>
+            </li>
+            <li>
+                {% if request.session.usuario.rol == 3 %}
+                    <a class="dropdown-item" href="{% url 'exposicion_create' %}">Crear Exposición</a>
+                {% endif %}
+            </li>
+          </ul>
+        </li>
+        <!-- Grupo para Entradas -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="entradaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Entradas</a>
+          <ul class="dropdown-menu" aria-labelledby="entradaDropdown">
+            <li>
+              <a class="dropdown-item" href="{% url 'listar_entradas' %}">Listado de Entradas</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'entrada_buscar_avanzada' %}">Buscar (Avanzado) Entradas</a>
+            </li>
+          </ul>
+        </li>
+        <!-- Grupo para Visitas Guiadas -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="visitaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Visitas Guiadas</a>
+          <ul class="dropdown-menu" aria-labelledby="visitaDropdown">
+            <li>
+              <a class="dropdown-item" href="{% url 'listar_visitas_guiadas' %}">Listado de Visitas Guiadas</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'visita_guiada_create' %}">Crear Visita Guiada</a>
+            </li>
+          </ul>
+        </li>
+        <!-- Grupo para Productos -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="productoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Productos</a>
+          <ul class="dropdown-menu" aria-labelledby="productoDropdown">
+            <li>
+              <a class="dropdown-item" href="{% url 'listar_productos' %}">Listado de Productos</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'producto_create' %}">Crear Producto</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <!-- Botón de Registro / Logout Alineado a la Derecha -->
+      <ul class="navbar-nav ms-auto">
+        {% if request.session.usuario %}
+          <li class="nav-item">
+            <span class="navbar-text me-3">Bienvenido, <strong>{{ request.session.usuario.username }}</strong> con rol de {{ request.session.usuario.rol }}</span>
           </li>
-          <!-- Grupo para Obras -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="obraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Obras</a>
-            <ul class="dropdown-menu" aria-labelledby="obraDropdown">
-              <li>
-                <a class="dropdown-item" href="{% url 'listar_obras' %}">Listado de Obras</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'obra_buscar_avanzada' %}">Buscar (Avanzado) Obras</a>
-              </li>
-            </ul>
+          <li class="nav-item">
+            <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar Sesión</a>
           </li>
-          <!-- Grupo para Exposiciones -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="obraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Exposiciones</a>
-            <ul class="dropdown-menu" aria-labelledby="obraDropdown">
-              <li>
-                <a class="dropdown-item" href="{% url 'listar_exposiciones' %}">Listado de Exposiciones</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'exposicion_buscar_avanzada' %}">Buscar (Avanzado) Exposiciones</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'exposicion_create' %}">Crear Exposición</a>
-              </li>
-            </ul>
+        {% else %}
+          <li class="nav-item">
+            <a href="{% url 'registrar_usuario' %}" class="btn btn-outline-primary me-2">Registrarse</a>
           </li>
-          <!-- Grupo para Entradas -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="obraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Entradas</a>
-            <ul class="dropdown-menu" aria-labelledby="obraDropdown">
-              <li>
-                <a class="dropdown-item" href="{% url 'listar_entradas' %}">Listado de Entradas</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'entrada_buscar_avanzada' %}">Buscar (Avanzado) Entradas</a>
-              </li>
-            </ul>
+          <li class="nav-item">
+            <a href="{% url 'login' %}" class="btn btn-primary">Iniciar Sesión</a>
           </li>
-          <!-- Grupo para VisitasGuiadas -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="museoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Visita Guiada</a>
-            <ul class="dropdown-menu" aria-labelledby="museoDropdown">
-              <li>
-                <a class="dropdown-item" href="{% url 'listar_visitas_guiadas' %}">Listado de Visitas Guiadas</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'visita_guiada_create' %}">Crear Visita Guiada</a>
-              </li>
-            </ul>
-          </li>
-          <!-- Grupo para Productos -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="museoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Productos</a>
-            <ul class="dropdown-menu" aria-labelledby="museoDropdown">
-              <li>
-                <a class="dropdown-item" href="{% url 'listar_productos' %}">Listado de Productos</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'producto_create' %}">Crear Producto</a>
-              </li>
-            </ul>
-          </li>
+        {% endif %}
+      </ul>
+    </div>
   </div>
 </nav>

@@ -7,6 +7,7 @@ from datetime import datetime
 from .cliente_api import cliente_api
 from .helper import helper
 from .helper import *
+from requests.exceptions import HTTPError
 import json
 import logging
 
@@ -1253,6 +1254,131 @@ def producto_eliminar(request, producto_id):
         messages.error(request, f"Ocurrió un error: {err}")
 
     return redirect("listar_productos")  # Redirigir siempre a la lista de productos
+
+# Vista de registro
+
+def registrar_usuario(request):
+    if request.method == "POST":
+        try:
+            formulario = RegistroForm(request.POST)
+            if formulario.is_valid():
+                headers = {
+                    "Content-Type": "application/json"
+                }
+                
+                response = requests.post(
+                    "http://127.0.0.1:8000/api/v1/registrar/usuario/",
+                    headers=headers,
+                    data=json.dumps(formulario.cleaned_data)
+                )
+                
+                if response.status_code == requests.codes.created:
+                    usuario = response.json()
+                    
+                    # Obtener el token de sesión automáticamente después del registro
+                    token_acceso = obtener_token_session(
+                        formulario.cleaned_data.get("username"),
+                        formulario.cleaned_data.get("password1")
+                    )
+
+                    if token_acceso:
+                        headers = {"Authorization": f"Bearer {token_acceso}"}
+                        response_usuario = requests.get(f"http://127.0.0.1:8000/api/v1/usuario/token/{token_acceso}/", headers=headers)
+
+                        if response_usuario.status_code == 200:
+                            usuario = response_usuario.json()
+                            request.session["usuario"] = usuario
+                            request.session["token"] = token_acceso
+                            messages.success(request, "Registro exitoso. Bienvenido al Museo.")
+                            return redirect("index")
+                        else:
+                            messages.error(request, "No se pudo recuperar los datos del usuario.")
+                    else:
+                        messages.error(request, "No se pudo obtener el token de acceso.")
+                else:
+                    response.raise_for_status()
+        
+        except HTTPError as http_err:
+            print(f'Error en la petición: {http_err}')
+            
+            if response.status_code == 400:
+                errores = response.json()
+                for error in errores:
+                    formulario.add_error(error, errores[error])
+                return render(request, 'registration/signup.html', {"formulario": formulario})
+            else:
+                return tratar_errores(request, response.status_code)
+
+        except Exception as err:
+            print(f'Ocurrió un error inesperado: {err}')
+            return tratar_errores(request, 500)
+
+    else:
+        formulario = RegistroForm()
+    
+    return render(request, 'registration/signup.html', {'formulario': formulario})
+
+
+def login(request):
+    if request.method == "POST":
+        formulario = LoginForm(request.POST)
+
+        if formulario.is_valid():
+            try:
+                username = formulario.cleaned_data.get("username")
+                password = formulario.cleaned_data.get("password")
+
+                # Obtener token de acceso desde la API
+                token_acceso = obtener_token_session(username, password)
+                if not token_acceso:
+                    raise Exception("No se pudo obtener el token de acceso.")
+
+                # Guardar token en la sesión
+                request.session["token"] = token_acceso
+                
+                # Obtener información del usuario autenticado desde la API
+                headers = {"Authorization": f"Bearer {token_acceso}"}
+                response = requests.get(f"http://127.0.0.1:8000/api/v1/usuario/token/{token_acceso}/", headers=headers)
+
+                if response.status_code == 200:
+                    usuario = response.json()
+                    request.session["usuario"] = usuario
+                    request.session["user_authenticated"] = True
+                    
+                    # Obtener nombre y rol del usuario
+                    nombre_usuario = usuario.get("username", "Usuario")
+                    rol = usuario.get("rol")
+
+                    # Definir el nombre del rol según su código
+                    roles = {1: "Administrador", 2: "Visitante", 3: "Responsable"}
+                    nombre_rol = roles.get(rol, "Desconocido")
+
+                    # Mostrar mensaje de bienvenida con nombre y rol
+                    messages.success(request, f"Bienvenido {nombre_usuario}, tienes el rol de {nombre_rol}.")
+
+
+                    return redirect("index")
+
+                else:
+                    messages.error(request, "No se pudo recuperar los datos del usuario.")
+                    return render(request, "registration/login.html", {"form": formulario})
+
+            except Exception as excepcion:
+                messages.error(request, f"Hubo un error en la autenticación: {excepcion}")
+                return render(request, "registration/login.html", {"form": formulario})
+
+    else:
+        formulario = LoginForm()
+    
+    return render(request, "registration/login.html", {"form": formulario})
+
+
+def logout(request):
+    # Eliminar el token si existe en la sesión
+    request.session.pop("token", None)
+    request.session.pop("usuario", None)  # También eliminamos los datos del usuario
+
+    return redirect("index")  # Redirigir al inicio
 
 
 

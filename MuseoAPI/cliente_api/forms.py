@@ -2,7 +2,8 @@ from django import forms
 from .models import *
 import requests
 from datetime import date
-import datetime
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 import environ
 
 env = environ.Env()
@@ -612,3 +613,21 @@ class ProductoEditarStockForm(forms.Form):
         min_value=0,
         help_text="Ingrese la cantidad actualizada de stock."
     )
+
+# Crear formulario para el registro de usuarios
+class RegistroForm(UserCreationForm):
+    ROLES = (
+        (2, 'Visitante'),
+        (3, 'Responsable'),
+    )
+    rol = forms.ChoiceField(choices=ROLES, label="Rol")
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2', 'rol')
+        
+        
+#Crear formulario para el login de usuarios
+class LoginForm(forms.Form):
+    username = forms.CharField(label="Nombre de Usuario")
+    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput())

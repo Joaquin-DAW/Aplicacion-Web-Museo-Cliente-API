@@ -1,4 +1,3 @@
-
 import requests
 import environ
 import os
@@ -13,68 +12,79 @@ env = environ.Env()
 
 class cliente_api:
     
-    token = ""
-    metodo = ""
-    url = ""
-    datosEnvio = None
-    formatoRespuesta = ""
-    codigoRespuesta = 0
-    datosRespuesta = {}
-    headers = {}
-    respuesta = None
-    
-    
-    def __init__(self,token, metodo,url,datosEnvio=None,formatoRespuesta="json"):
+    def __init__(self, token, metodo, url, datos_envio=None, formato_respuesta="json"):
         self.token = token        
-        self.metodo = metodo   
+        self.metodo = metodo.upper()  # Convertir método a mayúsculas por seguridad
         self.url = url
-        self.datosEnvio = datosEnvio
-        self.formatoRespuesta = formatoRespuesta
-    
+        self.datos_envio = datos_envio
+        self.formato_respuesta = formato_respuesta
+        self.codigo_respuesta = 0
+        self.datos_respuesta = {}
+        self.headers = {}
+
     def crear_cabecera(self):
-        self.headers["Authorization"] = "Bearer "+self.token
-        if(self.metodo == "PUT" or self.metodo == "PATCH" or self.metodo == "POST"):
+        """Crea los headers incluyendo el token"""
+        self.headers["Authorization"] = f"Bearer {self.token}"
+        if self.metodo in ["PUT", "PATCH", "POST"]:
             self.headers["Content-Type"] = "application/json"
-    
+
     def transformar_datos_envio(self):
-        if(self.datosEnvio is not None):
-            self.datosEnvio=json.dumps(self.datosEnvio)
-    
+        """Convierte los datos a JSON si es necesario"""
+        if self.datos_envio is not None and isinstance(self.datos_envio, dict):
+            self.datos_envio = json.dumps(self.datos_envio)
+
     def realizar_peticion(self):
+        """Realiza la petición HTTP según el método especificado"""
         try:
-            self.respuesta = requests.put(
-                    ("http://127.0.0.1:8000/")+self.url,
-                    headers=self.headers,
-                    data=self.datosEnvio
-            )
-            self.codigoRespuesta = self.respuesta.status_code
+            url_completa = f"http://127.0.0.1:8000/{self.url}"
+            
+            metodos_http = {
+                "GET": requests.get,
+                "POST": requests.post,
+                "PUT": requests.put,
+                "PATCH": requests.patch,
+                "DELETE": requests.delete,
+            }
+
+            if self.metodo in metodos_http:
+                self.respuesta = metodos_http[self.metodo](url_completa, headers=self.headers, data=self.datos_envio)
+            else:
+                raise ValueError("Método HTTP no válido.")
+
+            self.codigo_respuesta = self.respuesta.status_code
             self.respuesta.raise_for_status()
+
         except HTTPError as http_err:
-            print(repr(http_err))
-            print(f'Hubo un error en la petición: {http_err}')
-    
+            print(f'Hubo un error en la petición: {repr(http_err)}')
+        except Exception as err:
+            print(f'Ocurrió un error inesperado: {repr(err)}')
+
     def tratar_respuesta(self):
-        if(self.formatoRespuesta == "json"):
-            self.datosRespuesta = self.respuesta.json()
-         
+        """Convierte la respuesta en JSON si corresponde"""
+        if self.formato_respuesta == "json" and self.respuesta is not None:
+            try:
+                self.datos_respuesta = self.respuesta.json()
+            except json.JSONDecodeError:
+                self.datos_respuesta = {}
+
     def realizar_peticion_api(self):
+        """Ejecuta todo el proceso de la petición API"""
         try:
             self.crear_cabecera()
             self.transformar_datos_envio()    
             self.realizar_peticion()
             self.tratar_respuesta()
         except Exception as err:
-            self.codigoRespuesta = 500
-            print(repr)
-            print(f'Ocurrió un error: {err}')
-    
+            self.codigo_respuesta = 500
+            print(f'Ocurrió un error: {repr(err)}')
+
     def es_respuesta_correcta(self):
-        return self.codigoRespuesta == 200
-    
+        return self.codigo_respuesta in [200, 201]  # También consideramos 201 como respuesta válida
+
     def es_error_validacion_datos(self):
-        return self.codigoRespuesta == 400
-    
-    def incluir_errores_formulario(self,formulario):
-        errores = self.datosRespuesta
+        return self.codigo_respuesta == 400
+
+    def incluir_errores_formulario(self, formulario):
+        errores = self.datos_respuesta
         for error in errores:
-                formulario.add_error(error,errores[error])
+            formulario.add_error(error, errores[error])

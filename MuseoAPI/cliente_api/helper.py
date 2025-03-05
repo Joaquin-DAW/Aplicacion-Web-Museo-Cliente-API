@@ -17,6 +17,28 @@ class helper:
             return response.json()
         return None
     
+    def obtener_entrada(entrada_id):
+        """
+        Obtiene los datos de una entrada por su ID desde la API.
+        """
+        headers = {'Authorization': f'Bearer {settings.TOKEN_ACCESO}'}
+        url = f"http://127.0.0.1:8000/api/v1/entradas/{entrada_id}"  # Ajusta la URL según corresponda
+    
+        try:
+            response = requests.get(url, headers=headers)
+            print("📡 Respuesta de la API:", response.status_code, response.text)  # 🔍 Debug
+            
+            if response.status_code == 200:
+                return response.json()  # ✅ Retorna los datos de la entrada
+            elif response.status_code == 404:
+                print("⚠️ Entrada no encontrada (404)")
+            else:
+                print("❌ Error en la API al obtener la entrada:", response.status_code)
+        except requests.exceptions.RequestException as e:
+            print("🚨 Error de conexión con la API:", e)
+    
+        return None  # ❌ Si hay error, devuelve None
+    
     def obtener_exposicion(exposicion_id):
         """
         Obtiene los datos de una exposición por su ID desde la API.

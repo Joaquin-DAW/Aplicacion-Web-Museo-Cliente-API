@@ -146,17 +146,20 @@ def listar_artistas(request):
     return render(request, 'estructura/artista/lista.html', {'artistas': artistas})
 
 def listar_entradas(request):
-    headers = crear_cabecera() 
-    response = requests.get(f'{API_BASE_URL}entradas', headers=headers)
-    if response.status_code == 404:
+    token = request.session.get("token")  # Obtener token desde la sesión
+    cliente = cliente_api(token, "GET", "api/v1/entradas")  # Usamos cliente_api
+    cliente.realizar_peticion_api()
+
+    if cliente.es_respuesta_correcta():
+        entradas = cliente.datos_respuesta
+        return render(request, 'entrada/lista.html', {'entradas': entradas})
+    elif cliente.codigo_respuesta == 403:
+        messages.error(request, "No tienes permisos para ver entradas.")
+        return redirect("index")
+    elif cliente.codigo_respuesta == 404:
         return tratar_errores(request, 404)
-
-    entradas = tipo_respuesta(response)
-
-    if "error" in entradas:
+    else:
         return tratar_errores(request, 500)
-    
-    return render(request, 'entrada/lista.html', {'entradas': entradas})
 
 def listar_visitas_guiadas(request):
     # Obtener todas las visitas guiadas desde la API
@@ -311,6 +314,8 @@ def museo_create(request):
                 if cliente.es_respuesta_correcta():
                     messages.success(request, "El museo se ha creado correctamente.")
                     return redirect("listar_museos")
+                elif cliente.codigo_respuesta == 403:
+                    messages.error(request, "❌ No tienes permiso para crear un museo.")
                 else:
                     errores = cliente.datos_respuesta
                     for error in errores:
@@ -744,6 +749,44 @@ def exposicion_eliminar(request, exposicion_id):
         messages.error(request, f"Ocurrió un error: {err}")
 
     return redirect("listar_exposiciones")
+
+#Post
+def entrada_create(request):
+    if request.method == "POST":
+        formulario = EntradaForm(request.POST)
+        if formulario.is_valid():
+            try:
+                datos = formulario.cleaned_data.copy()
+                del datos["fecha_compra"]  # Eliminar fecha_compra para evitar errores
+                
+                token = request.session.get("token", None)  # Obtener el token de sesión
+                if not token:
+                    messages.error(request, "No se encontró el token de autenticación.")
+                    return redirect("login")
+                
+                # Agregar el usuario autenticado automáticamente
+                datos["creado_por"] = request.user.id
+                
+                cliente = cliente_api(token, "POST", "api/v1/entradas/crear", datos)
+                cliente.realizar_peticion_api()
+                
+                print("📡 Datos enviados al servidor:", datos)
+                
+                if cliente.es_respuesta_correcta():
+                    messages.success(request, "La entrada se ha creado correctamente.")
+                    return redirect("listar_entradas")
+                elif cliente.codigo_respuesta == 403:
+                    messages.error(request, "❌ No tienes permiso para crear una entrada.")
+                else:
+                    errores = cliente.datos_respuesta
+                    for error in errores:
+                        formulario.add_error(error, errores[error])
+            except Exception as err:
+                messages.error(request, f"Ocurrió un error: {err}")
+    else:
+        formulario = EntradaForm()
+    
+    return render(request, "entrada/create.html", {"formulario": formulario})
 
 #Buscar avanzada Entrada    
 def entrada_buscar_avanzada(request):

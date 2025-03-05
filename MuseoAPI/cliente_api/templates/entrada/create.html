@@ -1,0 +1,31 @@
+{% extends "principal.html" %}
+
+{% block contenido %}
+
+{% load django_bootstrap5 %}
+
+<h3>Precios de Entradas:</h3>
+<ul>
+    <li><strong>Adulto:</strong> 10.00€</li>
+    <li><strong>Niño:</strong> 5.00€</li>
+</ul>
+
+<form action="{% url 'entrada_create' %}" method="post">
+    {% csrf_token %}
+
+    <div class="mb-4">
+        <label for="{{ formulario.tipo.id_for_label }}" class="form-label">{{ formulario.tipo.label }}: </label>
+        <select name="{{ formulario.tipo.html_name }}" class="form-control">
+            {% for tipo_value, tipo_label in formulario.tipo.field.choices %}
+                <option value="{{ tipo_value }}">{{ tipo_label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-4">
+        <button type="submit" class="btn btn-primary">Crear Entrada</button>
+    </div>
+
+</form>
+
+{% endblock %}

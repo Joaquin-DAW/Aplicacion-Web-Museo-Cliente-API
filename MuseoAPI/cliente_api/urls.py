@@ -25,6 +25,7 @@ urlpatterns = [
     
     path('entradas/', views.listar_entradas, name='listar_entradas'),
     path('entradas/busqueda_avanzada/', views.entrada_buscar_avanzada, name='entrada_buscar_avanzada'),
+    path('entrada/create/', views.entrada_create, name='entrada_create'),
     
     path('visitasguiadas/', views.listar_visitas_guiadas, name='listar_visitas_guiadas'),
     path('visitasguiadas/crear/', views.visita_guiada_create, name='visita_guiada_create'),

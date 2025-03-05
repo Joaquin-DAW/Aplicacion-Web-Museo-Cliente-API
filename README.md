@@ -1,5 +1,9 @@
 # Aplicacion-Web-Museo-Cliente-API
 
+Muchas gracias por haber descargado mi aplicación, esta es la versión de cliente, recuerda que tambien necesitas la versión servidor API para poder desplegar ambas y que esta aplicación cliente reciba los datos del servidor. Si no sabes donde esta busca en el mismo perfil de github que te ha descargado este repositorio, se lla "Aplicacion-Web--Museo".
+
+
+
 # 📜 Gestión de Permisos en la API
 
 Este documento detalla los permisos de acceso para cada tipo de usuario en la API del Museo.

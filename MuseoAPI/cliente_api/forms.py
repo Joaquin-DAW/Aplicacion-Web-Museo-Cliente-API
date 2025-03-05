@@ -345,9 +345,71 @@ class BusquedaAvanzadaEntradaForm(forms.Form):
         except Exception:
             self.fields['visitante'].choices = [('', 'Error al cargar visitantes')]
 
+# POST - Crear Entrada
+class EntradaForm(forms.Form):
+    codigo = forms.CharField(
+        label="Código de Entrada",
+        required=True,
+        max_length=10,
+        help_text="Código único de la entrada (máximo 10 caracteres)."
+    )
+    precio = forms.DecimalField(
+        label="Precio",
+        required=True,
+        max_digits=6,
+        decimal_places=2,
+        help_text="Precio de la entrada (máximo 6 dígitos con 2 decimales)."
+    )
+    tipo = forms.ChoiceField(
+        label="Tipo de Entrada",
+        choices=[('adulto', 'Adulto'), ('nino', 'Niño')],
+        required=True,
+        help_text="Selecciona el tipo de entrada."
+    )
+    visitante_id = forms.IntegerField(
+        label="ID del Visitante",
+        required=True,
+        help_text="Proporcione el ID del visitante asociado a la entrada."
+    )
+    
+    def clean_codigo(self):
+        codigo = self.cleaned_data.get("codigo")
+        if len(codigo) > 10:
+            raise forms.ValidationError("El código no puede superar los 10 caracteres.")
+        return codigo
+    
+    def clean_precio(self):
+        precio = self.cleaned_data.get("precio")
+        if precio <= 0:
+            raise forms.ValidationError("El precio debe ser un valor positivo.")
+        return precio
+    
+    def clean_visitante_id(self):
+        visitante_id = self.cleaned_data.get("visitante_id")
+        if visitante_id <= 0:
+            raise forms.ValidationError("El ID del visitante debe ser un número positivo.")
+        return visitante_id
+    
+    def enviar_datos(self):
+        """
+        Envía los datos a la API para crear una nueva entrada.
+        """
+        url = "http://127.0.0.1:8000/api/v1/entradas/crear/"  # Ajusta la URL según corresponda
+        datos = {
+            "codigo": self.cleaned_data["codigo"],
+            "precio": str(self.cleaned_data["precio"]),
+            "tipo": self.cleaned_data["tipo"],
+            "visitante": self.cleaned_data["visitante_id"]
+        }
+        
+        try:
+            respuesta = requests.post(url, json=datos)
+            return respuesta.json() if respuesta.status_code == 201 else respuesta.text
+        except requests.exceptions.RequestException as e:
+            return {"error": "No se pudo conectar con la API", "detalles": str(e)}
+
 
 # Crear formulario PATCH para actualizar un museo
-
 class MuseoEditarNombreForm(forms.Form):
     nombre = forms.CharField(
         label="Nuevo Nombre del Museo",
@@ -518,7 +580,6 @@ class VisitaGuiadaEditarCapacidadForm(forms.Form):
     
 
 # POST - Crear Producto
-
 def obtener_tiendas():
     """
     Obtiene la lista de tiendas disponibles desde la API.

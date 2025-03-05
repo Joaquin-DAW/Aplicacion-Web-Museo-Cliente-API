@@ -2,13 +2,13 @@
 {% load django_bootstrap5 %}
 
 {% block contenido %}
-<h1 class="mb-4">Lista de Productos</h1>
+<h1 class="mb-4">Lista de Visitas Guiadas</h1>
 <ul class="list-group">
-  {% for producto in productos %}
-    {% include 'producto/_producto.html' %}
+  {% for visita in visitas %}
+    {% include 'visita_guiada/_visita_guiada.html' %}
   {% empty %}
   <li class="list-group-item text-center">
-    <h2>No hay productos disponibles en este momento</h2>
+    <h2>No hay visitas guiadas registradas aún.</h2>
   </li>
   {% endfor %}
 </ul>
